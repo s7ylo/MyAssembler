@@ -32,10 +32,10 @@ typedef struct _program_object
 	program_image prog_image;
 
 	/* the local symbol table */
-	list_symbol_item_t lst;
+	symbol_table_entry_t lst;
 
 	/* the external symbol table */
-	list_symbol_item_t est;
+	symbol_table_entry_t est;
 
 	/* the entries table */
 } program_object, *program_object_t;

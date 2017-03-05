@@ -26,17 +26,16 @@ typedef struct _symbol
 	word address;
 } symbol, *symbol_t;
 
-typedef struct _list_symbol_item
+typedef struct _symbol_table_entry
 {
-	struct _list_symbol_item *next;
+	struct _symbol_table_entry *next;
 	symbol_t sym;
-} list_symbol_item, *list_symbol_item_t;
+} symbol_table_entry, *symbol_table_entry_t;
 
-/* allocate new symbol */
-list_symbol_item_t sym_table_alloc(void);
+symbol_table_entry_t symbol_table_entry_alloc(void);
 symbol_t sym_alloc(void);
 
-bool is_symbol_exist_in_table(list_symbol_item_t sym_table, const char *sym_name);
-void insert_symbol_to_table(list_symbol_item_t sym_table, symbol_t sym);
+bool is_symbol_exist_in_table(symbol_table_entry_t sym_table, const char *sym_name);
+void insert_symbol_to_table(symbol_table_entry_t sym_table, symbol_t sym);
 
 #endif /* SYMBOLS_H_ */

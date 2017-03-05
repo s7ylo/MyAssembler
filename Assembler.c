@@ -7,8 +7,8 @@
 
 static void initialize_program_object(program_object_t prog_obj)
 {
-	prog_obj->lst = sym_table_alloc();
-	prog_obj->est = sym_table_alloc();
+	prog_obj->lst = symbol_table_entry_alloc();
+	prog_obj->est = symbol_table_entry_alloc();
 }
 
 program_object_t translate_source_code(const char *source_code)
@@ -28,6 +28,9 @@ program_object_t translate_source_code(const char *source_code)
 	char *line_token = NULL;
 	char *line_end = NULL;
 
+	char *sym_name = NULL;
+	char *sym_end = NULL;
+
 	char symbol_name[30] = { 0 };
 	bool is_symbol = false;
 
@@ -46,17 +49,39 @@ program_object_t translate_source_code(const char *source_code)
 		/* create a copy of the current line */
 		line_copy = strdup(line);
 
-		/* split line by spaces and tabs */
-		line_token = strtok_r(line_copy, " \t", &line_end);
-
-		/* check if the first field (or token) is one of the following */
-		if (strchr(line_token, ':'))
+		/* check if the line contains the character ':' if so, it means that a symbol is present */
+		if (strchr(line_copy, ':'))
 		{
-			/* if we have found ':' this means the first field is a symbol */
+			/* extract the symbol name */
+			strncpy(
+				symbol_name,
+				line_copy,
+				(strchr(line_copy, ':') - line_copy));
+
+			// TODO: Does that symbol already exist in the local symbol table?
+			if (is_symbol_exist_in_table(program_obj->lst, symbol_name))
+			{
+				printf("The symbol: %s, is already exist in symbol table\n", symbol_name);
+			}
+			else
+			{
+				// TODO: otherwise, add it to the local symbol table
+				sym = sym_alloc();
+
+				sym->id.data = dc++;
+				sym->type.data = SymbolTypeData;
+				strncpy(sym->name, symbol_name, strlen(symbol_name));
+
+				insert_symbol_to_table(program_obj->lst, sym);
+			}
 		}
 
-	next_line:
+		/* split line by spaces and tabs */
+		//line_token = strtok_r(line_copy, " \t", &line_end);
+
+	//next_line:
 		free(line_copy);
+		memset(symbol_name, 0, sizeof(symbol_name));
 		line = strtok_r(NULL, "\n", &end_source_code); /* move to the next line */
 	}
 }

@@ -5,11 +5,12 @@
 
 #include "symbols.h"
 
-list_symbol_item_t sym_table_alloc(void)
+symbol_table_entry_t
+symbol_table_entry_alloc(void)
 {
-	list_symbol_item_t sym_table = (list_symbol_item_t)calloc(1, sizeof(list_symbol_item));
+	symbol_table_entry_t entry = (symbol_table_entry_t)calloc(1, sizeof(symbol_table_entry));
 
-	return sym_table;
+	return entry;
 }
 
 symbol_t sym_alloc(void)
@@ -19,9 +20,9 @@ symbol_t sym_alloc(void)
 	return sym;
 }
 
-bool is_symbol_exist_in_table(list_symbol_item_t sym_table, const char *sym_name)
+bool is_symbol_exist_in_table(symbol_table_entry_t sym_table, const char *sym_name)
 {
-	list_symbol_item_t tail = sym_table;
+	symbol_table_entry_t tail = sym_table;
 
 	while (tail->next)
 	{
@@ -38,14 +39,19 @@ bool is_symbol_exist_in_table(list_symbol_item_t sym_table, const char *sym_name
 	return false;
 }
 
-void insert_symbol_to_table(list_symbol_item_t sym_table, symbol_t sym)
+void insert_symbol_to_table(symbol_table_entry_t sym_table, symbol_t sym)
 {
-	list_symbol_item_t tail = sym_table;
+	symbol_table_entry_t entry = sym_table;
 
-	while (tail->next)
+	/* if this is an empty list, add it at the current node */
+
+	while (entry->next)
 	{
-		tail = tail->next;
+		entry = entry->next;
 	}
 
-	tail->next = sym;
+	entry->sym = sym;
+
+	/* allocate new entry as the next one */
+	entry->next = symbol_table_entry_alloc();
 }
