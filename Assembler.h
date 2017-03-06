@@ -14,6 +14,9 @@
 #define STATEMENT_ENTRY  ".entry"
 #define STATEMENT_EXTERN ".extern"
 
+#define AVAILABLE_INST_COUNT 16
+#define AVAILABLE_STATEMENTS_COUNT 4
+
 typedef struct _program_image
 {
 	/* the size in words of the code length */
