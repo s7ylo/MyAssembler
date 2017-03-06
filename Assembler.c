@@ -7,6 +7,7 @@
 
 static void initialize_program_object(program_object_t prog_obj)
 {
+	prog_obj->program_base.data = 100;
 	prog_obj->lst = symbol_table_entry_alloc();
 	prog_obj->est = symbol_table_entry_alloc();
 }
@@ -16,6 +17,7 @@ program_object_t translate_source_code(const char *source_code)
 	program_object_t program_obj = NULL;
 	symbol_t sym = NULL;
 
+	unsigned short current_address = 100;
 	unsigned short ic = 0; /* instruction counter */
 	unsigned short dc = 0; /* data counter */
 
@@ -58,20 +60,24 @@ program_object_t translate_source_code(const char *source_code)
 				line_copy,
 				(strchr(line_copy, ':') - line_copy));
 
-			// TODO: Does that symbol already exist in the local symbol table?
+			/* check if the symbol already exist in the symbol table */
 			if (is_symbol_exist_in_table(program_obj->lst, symbol_name))
 			{
 				printf("The symbol: %s, is already exist in symbol table\n", symbol_name);
 			}
 			else
 			{
-				// TODO: otherwise, add it to the local symbol table
 				sym = sym_alloc();
 
-				sym->id.data = dc++;
-				sym->type.data = SymbolTypeData;
-				strncpy(sym->name, symbol_name, strlen(symbol_name));
+				sym->id.data = dc;
+				sym->address.data = current_address;
 
+				strncpy(
+					sym->name,
+					strtok(symbol_name, " \t"),
+					strlen(symbol_name));
+
+				/* add to symbol table */
 				insert_symbol_to_table(program_obj->lst, sym);
 			}
 		}

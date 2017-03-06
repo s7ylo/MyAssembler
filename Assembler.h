@@ -28,6 +28,9 @@ typedef struct _program_image
 
 typedef struct _program_object
 {
+	/* base address */
+	word program_base;
+
 	/* the program's image */
 	program_image prog_image;
 
@@ -38,6 +41,7 @@ typedef struct _program_object
 	symbol_table_entry_t est;
 
 	/* the entries table */
+	/* the externals table */
 } program_object, *program_object_t;
 
 program_object_t translate_source_code(const char *source_code);
