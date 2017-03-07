@@ -17,6 +17,16 @@
 #define AVAILABLE_INST_COUNT 16
 #define AVAILABLE_STATEMENTS_COUNT 4
 
+typedef struct _instruction
+{
+	/* instruction length in words */
+	word length;
+
+	word w1;
+	word w2;
+	word w3;
+} instruction, *instruction_t;
+
 typedef struct _program_image
 {
 	/* the size in words of the code length */
@@ -25,8 +35,8 @@ typedef struct _program_image
 	/* the size in words of the data length */
 	word data_image_length;
 
-	word code_image[1000];
-	word data_image[1000];
+	/* memory image */
+	word memory_image[1000];
 } program_image, *program_image_t;
 
 typedef struct _program_object
@@ -48,6 +58,5 @@ typedef struct _program_object
 } program_object, *program_object_t;
 
 program_object_t translate_source_code(const char *source_code);
-void handle_instruction(const char *instruction);
 
 #endif /* ASSEMBLER_H_ */
