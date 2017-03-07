@@ -24,6 +24,9 @@ typedef struct _symbol
 	word id;
 	word type;
 	word address;
+
+	bool is_external;
+	bool is_instruction;
 } symbol, *symbol_t;
 
 typedef struct _symbol_table_entry

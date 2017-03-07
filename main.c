@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
 	strncpy(szFileName, argv[1], strlen(argv[1]));
 	buffer = read_file_content(szFileName);
 
-	translate_source_code(buffer);
+	assembler_first_transition(buffer);
+	// translate_source_code(buffer);
 
 	return 1;
 }

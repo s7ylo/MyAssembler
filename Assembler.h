@@ -17,6 +17,28 @@
 #define AVAILABLE_INST_COUNT 16
 #define AVAILABLE_STATEMENTS_COUNT 4
 
+enum InstructionIdentifier
+{
+	Mov = 0,
+	Cmp,
+	Add,
+	Sub,
+	Lea,
+	FirstIdentifierGroupEnd,
+	Not,
+	Clr,
+	Inc,
+	Dec,
+	Jmp,
+	Bne,
+	Red,
+	Prn,
+	Jsr,
+	SecondIdentifierGroupEnd,
+	Rts,
+	Stop
+};
+
 typedef struct _instruction
 {
 	/* instruction length in words */
@@ -41,9 +63,6 @@ typedef struct _program_image
 
 typedef struct _program_object
 {
-	/* base address */
-	word program_base;
-
 	/* the program's image */
 	program_image prog_image;
 
@@ -57,6 +76,23 @@ typedef struct _program_object
 	/* the externals table */
 } program_object, *program_object_t;
 
+typedef struct _source_line_info
+{
+	/* how many words to increase the instruction counter */
+	word ic;
+
+	/* how many words to increase the data counter */
+	word dc;
+} source_line_info, *source_line_info_t;
+
+typedef struct _instruction_info
+{
+	u_short identifier;
+	char name[5];
+	u_short length;
+} instruction_info, *instruction_info_t;
+
+program_object_t assembler_first_transition(const char *source);
 program_object_t translate_source_code(const char *source_code);
 
 #endif /* ASSEMBLER_H_ */
