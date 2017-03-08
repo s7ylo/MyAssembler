@@ -66,14 +66,12 @@ typedef struct _program_object
 	/* the program's image */
 	program_image prog_image;
 
-	/* the local symbol table */
-	symbol_table_entry_t lst;
+	/* the symbol table */
+	symbol_table_entry_t sym_tbl;
 
-	/* the external symbol table */
-	symbol_table_entry_t est;
-
-	/* the entries table */
-	/* the externals table */
+	/* instruction and data counters */
+	word_t ic;
+	word_t dc;
 } program_object, *program_object_t;
 
 typedef struct _source_line_info

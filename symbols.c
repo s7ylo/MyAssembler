@@ -13,6 +13,11 @@ symbol_table_entry_alloc(void)
 	return entry;
 }
 
+void sym_free(symbol_t sym)
+{
+	free(sym);
+}
+
 symbol_t sym_alloc(void)
 {
 	symbol_t sym = (symbol_t)calloc(1, sizeof(symbol));

@@ -35,13 +35,6 @@ static char *available_statements[AVAILABLE_STATEMENTS_COUNT] =
 		".entry"
 };
 
-
-static void initialize_program_object_2(program_object_t prog_obj)
-{
-	prog_obj->lst = symbol_table_entry_alloc();
-	prog_obj->est = symbol_table_entry_alloc();
-}
-
 static program_object_t initialize_program_object(void)
 {
 	program_object_t prog_obj = calloc(1, sizeof(program_object));
@@ -49,8 +42,9 @@ static program_object_t initialize_program_object(void)
 	if (!prog_obj)
 		return NULL;
 
-	prog_obj->lst = symbol_table_entry_alloc();
-	prog_obj->est = symbol_table_entry_alloc();
+	prog_obj->sym_tbl = symbol_table_entry_alloc();
+	prog_obj->ic = (word_t)calloc(1, sizeof(word));
+	prog_obj->dc = (word_t)calloc(1, sizeof(word));
 
 	return prog_obj;
 }
@@ -85,18 +79,39 @@ static bool is_guidance_statement(const char *field)
 	return false;
 }
 
-/* is_first parameter indicates whether or not
- * the guidance statement is at the first field of the line
- */
-static void handle_guidance_statement(const char *source_line, bool is_first)
+// TODO: Create a generic function to handle new symbols, if they exist, if length exceeds max, external, etc . .
+static void handle_symbol(program_object_t prog_obj, const char *name, bool external, bool inst, word_t address)
 {
+	symbol_t sym;
+
+	if (strlen(name) > MAX_SYMBOL_NAME_LENGTH)
+	{
+		printf("[-] Symbol: %s name length exceeds the max length\n", name);
+		return;
+	}
+
+	if (is_symbol_exist_in_table(prog_obj->sym_tbl, name))
+	{
+		printf("[-] Symbol: %s, is already exist in the symbol table\n", name);
+		return;
+	}
+
+	sym = sym_alloc();
+
+	strncpy(
+		sym->name,
+		name,
+		strlen(name));
+
+	sym->is_external = external;
+	sym->is_instruction = inst;
+	sym->address.data = address->data;
+
+	insert_symbol_to_table(prog_obj->sym_tbl, sym);
 }
 
-static void handle_symbol(const char *source_line)
-{
-}
-
-u_short get_instruction_length(const char *instruction)
+/* return the appropriate instruction length */
+static u_short get_instruction_length(const char *instruction)
 {
 	char *instruction_cpy = strdup(instruction);
 	char *token = strtok(instruction_cpy, " \t");
@@ -115,6 +130,46 @@ u_short get_instruction_length(const char *instruction)
 	return -1; /* unknown length */
 }
 
+/* handle guidance statements
+ * in first transition, the .entry statement is ignored
+ */
+static u_short handle_guidance_statement(const char *source_line, program_object_t prog_obj, bool is_first_transition)
+{
+	char *source_line_cpy = strdup(source_line); // TODO: remember to free this at the end
+	char *source_line_e;
+	char *token;
+
+	token = strtok_r(
+			source_line_cpy,
+			" \t",
+			&source_line_e);
+
+	if (is_first_transition)
+	{
+		/* in the first transition we ignore the '.entry' statement */
+		if (!strcasecmp(token, STATEMENT_EXTERN))
+		{
+			token = strtok_r(
+					NULL,
+					" \t",
+					&source_line_e);
+
+			handle_symbol(
+					prog_obj,
+					token,
+					true,
+					false,
+					0);
+
+			return 0;
+		}
+	}
+	else
+	{
+	}
+}
+
+
 /* at the first transition we pass the code and addressing only the following
  *  - keeping a counter of the data and code sections, the code count starts from 100 and the data from 0
  *  - as each instruction passes, we increment the code section counter by the size of the instruction
@@ -122,13 +177,15 @@ u_short get_instruction_length(const char *instruction)
  *  - symbols, we save every symbol we found (external or not) and their address (ignore external address)
  *  - we ignore the '.entry' guidance statement at the first transition
  */
-void assembler_first_transition_single_line(const char *source_line, program_object_t prog_obj, word_t ic, word_t dc)
+void assembler_first_transition_single_line(const char *source_line, program_object_t prog_obj)
 {
 	char *source_line_cpy = strdup(source_line); // TODO: remember to free this at the end
 	char *source_line_e;
 	char *source_line_token;
 	char symbol_name[30];
+	bool is_inst;
 	u_short inst_length;
+	word addr = {0};
 	symbol_t sym;
 
 	/* split the line by spaces */
@@ -140,12 +197,21 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 	if (is_instruction(source_line_token))
 	{
 		/* handle instruction */
-		//printf("%s -> instruction\n", source_line);
+		inst_length = get_instruction_length(source_line);
+
+		if (inst_length == -1)
+		{
+			printf("[!] Unknown instruction: %s\n", source_line_token);
+		}
+		else
+		{
+			prog_obj->ic->data += inst_length;
+		}
 	}
 	else if (is_guidance_statement(source_line_token))
 	{
 		/* handle guidance statement */
-		//printf("%s -> guidance statement\n", source_line);
+		handle_guidance_statement(source_line, prog_obj, true);
 	}
 	else if (strchr(source_line_token, ':')) /* is symbol */
 	{
@@ -165,66 +231,40 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 		}
 		else
 		{
-			/* handle symbol */
-			sym = sym_alloc();
-
-			// TODO: save name
 			strncpy(
 				symbol_name,
 				source_line,
 				(strchr(source_line, ':') - source_line));
 
-			strncpy(
-				sym->name,
-				strtok(symbol_name, " \t"),
-				strlen(symbol_name));
-
-			/* check if symbol exist in symbol table */
-			if (is_symbol_exist_in_table(prog_obj->lst, sym->name))
+			if (!strcasecmp(source_line_token, STATEMENT_DATA) ||
+				!strcasecmp(source_line_token, STATEMENT_STRING))
 			{
-				// TODO: symbol already exist in table, pop some error and continue
+				is_inst = false;
+				addr.data = prog_obj->dc->data;
 			}
 			else
 			{
-				/* none external symbol */
-				sym->is_external = false;
+				is_inst = true;
+				addr.data = prog_obj->ic->data;
+				inst_length = get_instruction_length(strchr(source_line, ':') + 1);
 
-				/* next is the following field
-				 * .data / .string statement or instruction
-				 */
-				if (!strcasecmp(source_line_token, STATEMENT_DATA) ||
-					!strcasecmp(source_line_token, STATEMENT_STRING))
+				if (inst_length == -1)
 				{
-					/* statement */
-					/* save address as for data */
-					sym->address.data = dc->data;
-					sym->is_instruction = false;
-
-					// TODO: parse the rest of the data line and increase dc appropriately
+					printf("[!] Unknown instruction: %s\n", strchr(source_line, ':') + 1);
 				}
 				else
 				{
-					/* instruction */
-					/* save address as for code */
-					sym->address.data = ic->data;
-					sym->is_instruction = true;
-
-					// TODO: parse the rest of the instruction line and increase ic appropriately
-					inst_length = get_instruction_length(strchr(source_line, ':') + 1);
-
-					if (inst_length == -1)
-					{
-						// TODO: unknown instruction
-					}
-					else
-					{
-						ic->data += inst_length;
-					}
+					prog_obj->ic->data += inst_length;
 				}
-
-				/* insert symbol to symbol table */
-				insert_symbol_to_table(prog_obj->lst, sym);
 			}
+
+			handle_symbol(
+					prog_obj,
+					strtok(symbol_name, " \t"),
+					false,
+					is_inst,
+					&addr);
+
 		}
 	}
 }
@@ -232,14 +272,12 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 program_object_t assembler_first_transition(const char *source)
 {
 	program_object_t prog_obj = initialize_program_object();
-	word inst_count;
-	word data_count;
 	char *source_cpy = strdup(source);
 	char *source_cpy_e;
 	char *source_line;
 
-	inst_count.data = 100;
-	data_count.data = 0;
+	prog_obj->ic->data = 100;
+	prog_obj->dc->data = 0;
 
 	source_line = strtok_r(
 			source_cpy,
@@ -248,7 +286,7 @@ program_object_t assembler_first_transition(const char *source)
 
 	while (source_line)
 	{
-		assembler_first_transition_single_line(source_line, prog_obj, &inst_count, &data_count);
+		assembler_first_transition_single_line(source_line, prog_obj);
 
 		/* moving to the next source line */
 		source_line = strtok_r(
