@@ -1,4 +1,5 @@
-main.d: ../main.c ../Assembler.h ../arch.h ../symbols.h ../utils.h
+main.d: ../main.c ../Assembler.h ../arch.h ../symbols.h ../utils.h \
+ ../directive.h
 
 ../Assembler.h:
 
@@ -7,3 +8,5 @@ main.d: ../main.c ../Assembler.h ../arch.h ../symbols.h ../utils.h
 ../symbols.h:
 
 ../utils.h:
+
+../directive.h:

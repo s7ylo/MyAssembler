@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#define WORD_SIZE 0xF
+#define WORD_SIZE (15)
 
 typedef struct _word
 {

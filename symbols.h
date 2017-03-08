@@ -7,7 +7,7 @@
 
 #include "arch.h"
 
-#define MAX_SYMBOL_NAME_LENGTH 30
+#define MAX_SYMBOL_NAME_LENGTH (30)
 
 typedef struct _symbol
 {

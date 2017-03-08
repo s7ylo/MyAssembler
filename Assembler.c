@@ -6,7 +6,7 @@
 #include "Assembler.h"
 
 /* all available instructions */
-static instruction_info available_instructions[] =
+static instruction_info available_instructions[AVAILABLE_INST_COUNT] =
 {
 		{ Mov, "mov", 3 },
 		{ Cmp, "cmp", 3 },
@@ -26,15 +26,6 @@ static instruction_info available_instructions[] =
 		{ Stop, "stop", 1 }
 };
 
-/* all available guidance statements */
-static char *available_statements[AVAILABLE_STATEMENTS_COUNT] =
-{
-		".data",
-		".string",
-		".extern",
-		".entry"
-};
-
 static program_object_t initialize_program_object(void)
 {
 	program_object_t prog_obj = calloc(1, sizeof(program_object));
@@ -49,7 +40,7 @@ static program_object_t initialize_program_object(void)
 	return prog_obj;
 }
 
-static bool is_instruction(const char *field)
+static u_short is_instruction(const char *field)
 {
 	int i;
 
@@ -57,29 +48,13 @@ static bool is_instruction(const char *field)
 	{
 		if (!strcasecmp(field, available_instructions[i].name))
 		{
-			return true;
+			return available_instructions[i].length;
 		}
 	}
 
-	return false;
+	return 0;
 }
 
-static bool is_guidance_statement(const char *field)
-{
-	int i;
-
-	for (i = 0; i < AVAILABLE_STATEMENTS_COUNT; i++)
-	{
-		if (!strcasecmp(field, available_statements[i]))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-// TODO: Create a generic function to handle new symbols, if they exist, if length exceeds max, external, etc . .
 static void handle_symbol(program_object_t prog_obj, const char *name, bool external, bool inst, word_t address)
 {
 	symbol_t sym;
@@ -110,49 +85,29 @@ static void handle_symbol(program_object_t prog_obj, const char *name, bool exte
 	insert_symbol_to_table(prog_obj->sym_tbl, sym);
 }
 
-/* return the appropriate instruction length */
-static u_short get_instruction_length(const char *instruction)
-{
-	char *instruction_cpy = strdup(instruction);
-	char *token = strtok(instruction_cpy, " \t");
-	int i;
-
-	for (i = 0; i < AVAILABLE_INST_COUNT; i++)
-	{
-		if (!strcasecmp(token, available_instructions[i].name))
-		{
-			free(instruction_cpy);
-			return available_instructions[i].length;
-		}
-	}
-
-	free(instruction_cpy);
-	return -1; /* unknown length */
-}
-
 /* handle guidance statements
  * in first transition, the .entry statement is ignored
  */
-static u_short handle_guidance_statement(const char *source_line, program_object_t prog_obj, bool is_first_transition)
+static u_short handle_directive(const char *directive_line, program_object_t prog_obj, bool is_first_transition)
 {
-	char *source_line_cpy = strdup(source_line); // TODO: remember to free this at the end
-	char *source_line_e;
+	char *directive_line_cpy = strdup(directive_line); // TODO: remember to free this at the end
+	char *directive_line_e;
 	char *token;
 
 	token = strtok_r(
-			source_line_cpy,
+			directive_line_cpy,
 			" \t",
-			&source_line_e);
+			&directive_line_e);
 
 	if (is_first_transition)
 	{
 		/* in the first transition we ignore the '.entry' statement */
-		if (!strcasecmp(token, STATEMENT_EXTERN))
+		if (!strcasecmp(token, DIRECTIVE_EXTERN))
 		{
 			token = strtok_r(
 					NULL,
 					" \t",
-					&source_line_e);
+					&directive_line_e);
 
 			handle_symbol(
 					prog_obj,
@@ -182,11 +137,11 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 	char *source_line_cpy = strdup(source_line); // TODO: remember to free this at the end
 	char *source_line_e;
 	char *source_line_token;
+	char *directive;
 	char symbol_name[30];
-	bool is_inst;
 	u_short inst_length;
+	bool is_inst;
 	word addr = {0};
-	symbol_t sym;
 
 	/* split the line by spaces */
 	source_line_token = strtok_r(
@@ -194,40 +149,30 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 			" \t",
 			&source_line_e);
 
-	if (is_instruction(source_line_token))
+	if ((inst_length = is_instruction(source_line_token)))
 	{
 		/* handle instruction */
-		inst_length = get_instruction_length(source_line);
-
-		if (inst_length == -1)
-		{
-			printf("[!] Unknown instruction: %s\n", source_line_token);
-		}
-		else
-		{
-			prog_obj->ic->data += inst_length;
-		}
+		prog_obj->ic->data += inst_length;
 	}
-	else if (is_guidance_statement(source_line_token))
+	else if ((directive = is_directive(source_line_token)))
 	{
 		/* handle guidance statement */
-		handle_guidance_statement(source_line, prog_obj, true);
+		handle_directive(directive, prog_obj, true);
 	}
 	else if (strchr(source_line_token, ':')) /* is symbol */
 	{
 		/* in here we need to check if the symbol is followed
-		 * by a guidance statement (.entry or .extern) and ignore the symbol if so
+		 * by a directive (.entry or .extern) and ignore the symbol if so
 		 */
 		source_line_token = strtok_r(
 				NULL,
 				" ",
 				&source_line_e);
 
-		if (!strcasecmp(source_line_token, STATEMENT_ENTRY) ||
-			!strcasecmp(source_line_token, STATEMENT_EXTERN))
+		if (!strcasecmp(source_line_token, DIRECTIVE_ENTRY) ||
+			!strcasecmp(source_line_token, DIRECTIVE_EXTERN))
 		{
-			/* go to handle guidance statement */
-			//printf("%s -> symbol ignored with guidance statement\n", source_line);
+			/* handle directive */
 		}
 		else
 		{
@@ -236,8 +181,8 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 				source_line,
 				(strchr(source_line, ':') - source_line));
 
-			if (!strcasecmp(source_line_token, STATEMENT_DATA) ||
-				!strcasecmp(source_line_token, STATEMENT_STRING))
+			if (!strcasecmp(source_line_token, DIRECTIVE_DATA) ||
+				!strcasecmp(source_line_token, DIRECTIVE_STRING))
 			{
 				is_inst = false;
 				addr.data = prog_obj->dc->data;
@@ -246,15 +191,14 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 			{
 				is_inst = true;
 				addr.data = prog_obj->ic->data;
-				inst_length = get_instruction_length(strchr(source_line, ':') + 1);
 
-				if (inst_length == -1)
+				if ((inst_length = is_instruction(strchr(source_line, ':') + 1)))
 				{
-					printf("[!] Unknown instruction: %s\n", strchr(source_line, ':') + 1);
+					prog_obj->ic->data += inst_length;
 				}
 				else
 				{
-					prog_obj->ic->data += inst_length;
+					printf("[!] Unknown instruction: %s\n", strchr(source_line, ':') + 1);
 				}
 			}
 

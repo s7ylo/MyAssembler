@@ -8,14 +8,16 @@
 #include "arch.h"
 #include "symbols.h"
 #include "utils.h"
+#include "directive.h"
 
-#define STATEMENT_DATA   ".data"
-#define STATEMENT_STRING ".string"
-#define STATEMENT_ENTRY  ".entry"
-#define STATEMENT_EXTERN ".extern"
+/* assembler's directives */
+#define DIRECTIVE_DATA   ".data"
+#define DIRECTIVE_STRING ".string"
+#define DIRECTIVE_ENTRY  ".entry"
+#define DIRECTIVE_EXTERN ".extern"
 
-#define AVAILABLE_INST_COUNT 16
-#define AVAILABLE_STATEMENTS_COUNT 4
+#define AVAILABLE_INST_COUNT      (16)
+#define AVAILABLE_DIRECTIVE_COUNT (4)
 
 enum InstructionIdentifier
 {

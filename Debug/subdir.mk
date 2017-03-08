@@ -5,18 +5,21 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Assembler.c \
+../directive.c \
 ../main.c \
 ../symbols.c \
 ../utils.c 
 
 OBJS += \
 ./Assembler.o \
+./directive.o \
 ./main.o \
 ./symbols.o \
 ./utils.o 
 
 C_DEPS += \
 ./Assembler.d \
+./directive.d \
 ./main.d \
 ./symbols.d \
 ./utils.d 
