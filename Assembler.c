@@ -94,6 +94,26 @@ static void handle_symbol(program_object_t prog_obj, const char *name, bool exte
 	insert_symbol_to_table(prog_obj->sym_tbl, sym);
 }
 
+
+static u_short handle_data_directive(const char *directive_line, program_object_t prog_obj)
+{
+	char *directive_line_cpy = strdup(directive_line);
+	char *directive_line_e;
+	char *token;
+
+	token = strtok_r(
+			directive_line_cpy,
+			" \t",
+			&directive_line_e);
+
+	if (!strcasecmp(token, DIRECTIVE_DATA))
+	{
+	}
+	else /* DIRECTIVE_STRING */
+	{
+	}
+}
+
 /* handle guidance statements
  * in first transition, the .entry statement is ignored
  */
@@ -126,6 +146,10 @@ static u_short handle_directive(const char *directive_line, program_object_t pro
 					0);
 
 			return 0;
+		}
+		else if (!strcasecmp(token, DIRECTIVE_STRING) ||
+				  !strcasecmp(token, DIRECTIVE_DATA))
+		{
 		}
 	}
 	else
