@@ -7,22 +7,19 @@ C_SRCS += \
 ../Assembler.c \
 ../directive.c \
 ../main.c \
-../symbols.c \
-../utils.c 
+../symbols.c 
 
 OBJS += \
 ./Assembler.o \
 ./directive.o \
 ./main.o \
-./symbols.o \
-./utils.o 
+./symbols.o 
 
 C_DEPS += \
 ./Assembler.d \
 ./directive.d \
 ./main.d \
-./symbols.d \
-./utils.d 
+./symbols.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

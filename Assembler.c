@@ -1,6 +1,5 @@
 /*
  * Assembler.c
- *
  */
 
 #include "Assembler.h"
@@ -42,16 +41,22 @@ static program_object_t initialize_program_object(void)
 
 static u_short is_instruction(const char *field)
 {
+	char *field_cpy = strdup(field); // free this at the end
+	char *token;
 	int i;
+
+	token = strtok(field_cpy, " \t");
 
 	for (i = 0; i < AVAILABLE_INST_COUNT; i++)
 	{
-		if (!strcasecmp(field, available_instructions[i].name))
+		if (!strcasecmp(token, available_instructions[i].name))
 		{
+			free(field_cpy);
 			return available_instructions[i].length;
 		}
 	}
 
+	free(field_cpy);
 	return 0;
 }
 
@@ -80,7 +85,11 @@ static void handle_symbol(program_object_t prog_obj, const char *name, bool exte
 
 	sym->is_external = external;
 	sym->is_instruction = inst;
-	sym->address.data = address->data;
+
+	if (address)
+		sym->address.data = address->data;
+	else
+		sym->address.data = 0;
 
 	insert_symbol_to_table(prog_obj->sym_tbl, sym);
 }
@@ -121,9 +130,13 @@ static u_short handle_directive(const char *directive_line, program_object_t pro
 	}
 	else
 	{
+		// TODO: Shouldn't be 0
+		return 0;
 	}
-}
 
+	// TODO: Shouldn't be 0
+	return 0;
+}
 
 /* at the first transition we pass the code and addressing only the following
  *  - keeping a counter of the data and code sections, the code count starts from 100 and the data from 0
@@ -157,7 +170,7 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 	else if ((directive = is_directive(source_line_token)))
 	{
 		/* handle guidance statement */
-		handle_directive(directive, prog_obj, true);
+		handle_directive(source_line, prog_obj, true);
 	}
 	else if (strchr(source_line_token, ':')) /* is symbol */
 	{
@@ -208,7 +221,6 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 					false,
 					is_inst,
 					&addr);
-
 		}
 	}
 }
