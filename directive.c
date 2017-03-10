@@ -33,4 +33,3 @@ char* is_directive(const char *field)
 	free(field_cpy);
 	return NULL;
 }
-

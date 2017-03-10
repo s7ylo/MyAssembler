@@ -52,6 +52,16 @@ static u_short is_instruction(const char *field)
 		if (!strcasecmp(token, available_instructions[i].name))
 		{
 			free(field_cpy);
+
+			/* if this is a 3 words length instruction,
+			 * check if both operands are register,
+			 * if so, length is 2 words
+			 */
+
+			if (available_instructions[i].length == 3)
+			{
+			}
+
 			return available_instructions[i].length;
 		}
 	}
@@ -95,12 +105,16 @@ static void handle_symbol(program_object_t prog_obj, const char *name, bool exte
 }
 
 
-static u_short handle_data_directive(const char *directive_line, program_object_t prog_obj)
+static void handle_data_directive(const char *directive_line, program_object_t prog_obj)
 {
 	char *directive_line_cpy = strdup(directive_line);
 	char *directive_line_e;
 	char *token;
+	char *string_value = NULL;
+	u_short string_length;
+	u_short i;
 
+	/* extract the directive (.string or .data) */
 	token = strtok_r(
 			directive_line_cpy,
 			" \t",
@@ -108,9 +122,38 @@ static u_short handle_data_directive(const char *directive_line, program_object_
 
 	if (!strcasecmp(token, DIRECTIVE_DATA))
 	{
+		token = strtok_r(
+				directive_line_cpy,
+				" \t,",
+				&directive_line_e);
+
+		while (token)
+		{
+			prog_obj->prog_image.data_image[prog_obj->prog_image.data_image_length.data++].data = strtoul(token, NULL, 10);
+
+			/* increase data counter by one */
+			prog_obj->dc->data++;
+
+			/* move to the next number (in case it has another one) */
+			token = strtok_r(
+					directive_line_cpy,
+					" \t,",
+					&directive_line_e);
+		}
 	}
 	else /* DIRECTIVE_STRING */
 	{
+		string_length = (strrchr(directive_line, '"') - strchr(directive_line, '"')) - 1;
+		string_value = strchr(directive_line, '"') + 1;
+
+		for (i = 0; i < string_length; i++)
+		{
+			prog_obj->prog_image.data_image[prog_obj->prog_image.data_image_length.data++].data = string_value[i];
+		}
+
+		/* set the null terminator */
+		prog_obj->prog_image.data_image[prog_obj->prog_image.data_image_length.data++].data = 0;
+		prog_obj->dc->data += string_length + 1;
 	}
 }
 
@@ -150,6 +193,7 @@ static u_short handle_directive(const char *directive_line, program_object_t pro
 		else if (!strcasecmp(token, DIRECTIVE_STRING) ||
 				  !strcasecmp(token, DIRECTIVE_DATA))
 		{
+			handle_data_directive(directive_line, prog_obj);
 		}
 	}
 	else
@@ -186,7 +230,7 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 			" \t",
 			&source_line_e);
 
-	if ((inst_length = is_instruction(source_line_token)))
+	if ((inst_length = is_instruction_internal(source_line_token)))
 	{
 		/* handle instruction */
 		prog_obj->ic->data += inst_length;
@@ -221,6 +265,11 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 			if (!strcasecmp(source_line_token, DIRECTIVE_DATA) ||
 				!strcasecmp(source_line_token, DIRECTIVE_STRING))
 			{
+				handle_directive(
+						strchr(source_line, ':') + 1,
+						prog_obj,
+						true);
+
 				is_inst = false;
 				addr.data = prog_obj->dc->data;
 			}
@@ -229,7 +278,7 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 				is_inst = true;
 				addr.data = prog_obj->ic->data;
 
-				if ((inst_length = is_instruction(strchr(source_line, ':') + 1)))
+				if ((inst_length = is_instruction_internal(strchr(source_line, ':') + 1)))
 				{
 					prog_obj->ic->data += inst_length;
 				}
