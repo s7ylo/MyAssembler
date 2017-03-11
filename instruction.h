@@ -16,7 +16,6 @@ enum InstructionIdentifier
 	Add,
 	Sub,
 	Lea,
-	FirstIdentifierGroupEnd,
 	Not,
 	Clr,
 	Inc,
@@ -26,16 +25,23 @@ enum InstructionIdentifier
 	Red,
 	Prn,
 	Jsr,
-	SecondIdentifierGroupEnd,
 	Rts,
 	Stop
+};
+
+enum OperandType
+{
+	Immediate = 0,
+	Address,
+	RegIndex,
+	Register
 };
 
 typedef struct _instruction_info
 {
 	u_short identifier;
 	char name[5];
-	u_short length;
+	word length;
 } instruction_info, *instruction_info_t;
 
 typedef struct _assembled_instruction
@@ -48,7 +54,8 @@ typedef struct _assembled_instruction
 
 } assembled_instruction, *assembled_instruction_t;
 
-u_short is_instruction_internal(const char *field);
+bool is_instruction(const char *field);
+word_t get_instruction_length(const char *instruction);
 
 assembled_instruction_t
 assemble_instruction(const char *instruction_line);

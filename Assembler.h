@@ -10,10 +10,6 @@
 #include "directive.h"
 #include "instruction.h"
 
-#define AVAILABLE_INST_COUNT (16)
-
-
-
 typedef struct _instruction
 {
 	/* instruction length in words */
@@ -57,6 +53,13 @@ typedef struct _source_line_info
 	/* how many words to increase the data counter */
 	word dc;
 } source_line_info, *source_line_info_t;
+
+void handle_symbol(
+		program_object_t prog_obj,
+		const char *name,
+		bool external,
+		bool inst,
+		word_t address);
 
 program_object_t assembler_first_transition(const char *source);
 program_object_t translate_source_code(const char *source_code);

@@ -4,30 +4,64 @@
 
 #include "instruction.h"
 
+/* all available registers */
+static char *available_registers[REGS_COUNT] =
+{
+		"r0",
+		"r1",
+		"r2",
+		"r3",
+		"r4",
+		"r5",
+		"r6",
+		"r7",
+};
+
 /* all available instructions */
 static instruction_info available_instructions[AVAILABLE_INST_COUNT] =
 {
-		{ Mov, "mov", 3 },
-		{ Cmp, "cmp", 3 },
-		{ Add, "add", 3 },
-		{ Sub, "sub", 3 },
-		{ Lea, "lea", 3 },
-		{ Not, "not", 2 },
-		{ Clr, "clr", 2 },
-		{ Inc, "inc", 2 },
-		{ Dec, "dec", 2 },
-		{ Jmp, "jmp", 2 },
-		{ Bne, "bne", 2 },
-		{ Red, "red", 2 },
-		{ Prn, "prn", 2 },
-		{ Jsr, "jsr", 2 },
-		{ Rts, "rts", 1 },
-		{ Stop, "stop", 1 }
+		{ Mov, "mov", { 3 } },
+		{ Cmp, "cmp", { 3 } },
+		{ Add, "add", { 3 } },
+		{ Sub, "sub", { 3 } },
+		{ Lea, "lea", { 3 } },
+		{ Not, "not", { 2 } },
+		{ Clr, "clr", { 2 } },
+		{ Inc, "inc", { 2 } },
+		{ Dec, "dec", { 2 } },
+		{ Jmp, "jmp", { 2 } },
+		{ Bne, "bne", { 2 } },
+		{ Red, "red", { 2 } },
+		{ Prn, "prn", { 2 } },
+		{ Jsr, "jsr", { 2 } },
+		{ Rts, "rts", { 1 } },
+		{ Stop, "stop", { 1 } }
 };
 
-u_short is_instruction(const char *field)
+static bool is_operand_reg(const char *operand)
 {
-	char *field_cpy = strdup(field); // free this at the end
+	bool is_reg = false;
+	char *operand_cpy = strdup(operand);
+	char *token = strtok(operand_cpy, " \t,");
+	int i;
+
+	for (i = 0; i < REGS_COUNT; i++)
+	{
+		if (!strcasecmp(token, available_registers[i]))
+		{
+			is_reg = true;
+			break;
+		}
+	}
+
+	free(operand_cpy);
+	return is_reg;
+}
+
+bool is_instruction(const char *field)
+{
+	bool is_inst = false;
+	char *field_cpy = strdup(field);
 	char *token;
 	int i;
 
@@ -37,23 +71,59 @@ u_short is_instruction(const char *field)
 	{
 		if (!strcasecmp(token, available_instructions[i].name))
 		{
-			free(field_cpy);
-
-			/* if this is a 3 words length instruction,
-			 * check if both operands are register,
-			 * if so, length is 2 words
-			 */
-
-			if (available_instructions[i].length == 3)
-			{
-			}
-
-			return available_instructions[i].length;
+			is_inst = true;
+			break;
 		}
 	}
 
 	free(field_cpy);
-	return 0;
+	return is_inst;
+}
+
+// switch strtok with strtok_r and stick to it!
+word_t get_instruction_length(const char *instruction)
+{
+	word_t length = (word_t)calloc(1, sizeof(word));
+	char *instruction_cpy = strdup(instruction);
+	char *token;
+	int i;
+
+	token = strtok(instruction_cpy, " \t,");
+
+	for (i = 0; i < AVAILABLE_INST_COUNT; i++)
+	{
+		if (!strcasecmp(token, available_instructions[i].name))
+		{
+			if (available_instructions[i].length.data == 3)
+			{
+				/* if both operands register, return 2 as length */
+				token = strtok(NULL, " \t,");
+
+				if (is_operand_reg(token))
+				{
+					token = strtok(NULL, " \t,");
+
+					if (is_operand_reg(token))
+					{
+						length->data = 2;
+						break;
+					}
+
+					length->data = 3;
+					break;
+				}
+
+				length->data = 3;
+				break;
+			}
+
+			length->data = available_instructions[i].length.data;
+			break;
+		}
+	}
+
+	free(instruction_cpy);
+	return length;
 }
 
 assembled_instruction_t

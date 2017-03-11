@@ -16,6 +16,18 @@
 #define DIRECTIVE_ENTRY  ".entry"
 #define DIRECTIVE_EXTERN ".extern"
 
+/* Fix external types */
+typedef struct _program_object *program_object_t;
+
 char* is_directive(const char *field);
+
+void handle_data_directive(
+		const char *directive_line,
+		program_object_t prog_obj);
+
+u_short handle_directive(
+		const char *directive_line,
+		program_object_t prog_obj,
+		bool is_first_transition);
 
 #endif /* DIRECTIVE_H_ */

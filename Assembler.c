@@ -4,27 +4,6 @@
 
 #include "Assembler.h"
 
-/* all available instructions */
-static instruction_info available_instructions[AVAILABLE_INST_COUNT] =
-{
-		{ Mov, "mov", 3 },
-		{ Cmp, "cmp", 3 },
-		{ Add, "add", 3 },
-		{ Sub, "sub", 3 },
-		{ Lea, "lea", 3 },
-		{ Not, "not", 2 },
-		{ Clr, "clr", 2 },
-		{ Inc, "inc", 2 },
-		{ Dec, "dec", 2 },
-		{ Jmp, "jmp", 2 },
-		{ Bne, "bne", 2 },
-		{ Red, "red", 2 },
-		{ Prn, "prn", 2 },
-		{ Jsr, "jsr", 2 },
-		{ Rts, "rts", 1 },
-		{ Stop, "stop", 1 }
-};
-
 static program_object_t initialize_program_object(void)
 {
 	program_object_t prog_obj = calloc(1, sizeof(program_object));
@@ -39,38 +18,12 @@ static program_object_t initialize_program_object(void)
 	return prog_obj;
 }
 
-static u_short is_instruction(const char *field)
-{
-	char *field_cpy = strdup(field); // free this at the end
-	char *token;
-	int i;
-
-	token = strtok(field_cpy, " \t");
-
-	for (i = 0; i < AVAILABLE_INST_COUNT; i++)
-	{
-		if (!strcasecmp(token, available_instructions[i].name))
-		{
-			free(field_cpy);
-
-			/* if this is a 3 words length instruction,
-			 * check if both operands are register,
-			 * if so, length is 2 words
-			 */
-
-			if (available_instructions[i].length == 3)
-			{
-			}
-
-			return available_instructions[i].length;
-		}
-	}
-
-	free(field_cpy);
-	return 0;
-}
-
-static void handle_symbol(program_object_t prog_obj, const char *name, bool external, bool inst, word_t address)
+void handle_symbol(
+		program_object_t prog_obj,
+		const char *name,
+		bool external,
+		bool inst,
+		word_t address)
 {
 	symbol_t sym;
 
@@ -104,108 +57,6 @@ static void handle_symbol(program_object_t prog_obj, const char *name, bool exte
 	insert_symbol_to_table(prog_obj->sym_tbl, sym);
 }
 
-
-static void handle_data_directive(const char *directive_line, program_object_t prog_obj)
-{
-	char *directive_line_cpy = strdup(directive_line);
-	char *directive_line_e;
-	char *token;
-	char *string_value = NULL;
-	u_short string_length;
-	u_short i;
-
-	/* extract the directive (.string or .data) */
-	token = strtok_r(
-			directive_line_cpy,
-			" \t",
-			&directive_line_e);
-
-	if (!strcasecmp(token, DIRECTIVE_DATA))
-	{
-		token = strtok_r(
-				directive_line_cpy,
-				" \t,",
-				&directive_line_e);
-
-		while (token)
-		{
-			prog_obj->prog_image.data_image[prog_obj->prog_image.data_image_length.data++].data = strtoul(token, NULL, 10);
-
-			/* increase data counter by one */
-			prog_obj->dc->data++;
-
-			/* move to the next number (in case it has another one) */
-			token = strtok_r(
-					directive_line_cpy,
-					" \t,",
-					&directive_line_e);
-		}
-	}
-	else /* DIRECTIVE_STRING */
-	{
-		string_length = (strrchr(directive_line, '"') - strchr(directive_line, '"')) - 1;
-		string_value = strchr(directive_line, '"') + 1;
-
-		for (i = 0; i < string_length; i++)
-		{
-			prog_obj->prog_image.data_image[prog_obj->prog_image.data_image_length.data++].data = string_value[i];
-		}
-
-		/* set the null terminator */
-		prog_obj->prog_image.data_image[prog_obj->prog_image.data_image_length.data++].data = 0;
-		prog_obj->dc->data += string_length + 1;
-	}
-}
-
-/* handle guidance statements
- * in first transition, the .entry statement is ignored
- */
-static u_short handle_directive(const char *directive_line, program_object_t prog_obj, bool is_first_transition)
-{
-	char *directive_line_cpy = strdup(directive_line); // TODO: remember to free this at the end
-	char *directive_line_e;
-	char *token;
-
-	token = strtok_r(
-			directive_line_cpy,
-			" \t",
-			&directive_line_e);
-
-	if (is_first_transition)
-	{
-		/* in the first transition we ignore the '.entry' statement */
-		if (!strcasecmp(token, DIRECTIVE_EXTERN))
-		{
-			token = strtok_r(
-					NULL,
-					" \t",
-					&directive_line_e);
-
-			handle_symbol(
-					prog_obj,
-					token,
-					true,
-					false,
-					0);
-
-			return 0;
-		}
-		else if (!strcasecmp(token, DIRECTIVE_STRING) ||
-				  !strcasecmp(token, DIRECTIVE_DATA))
-		{
-			handle_data_directive(directive_line, prog_obj);
-		}
-	}
-	else
-	{
-		// TODO: Shouldn't be 0
-		return 0;
-	}
-
-	// TODO: Shouldn't be 0
-	return 0;
-}
-
 /* at the first transition we pass the code and addressing only the following
  *  - keeping a counter of the data and code sections, the code count starts from 100 and the data from 0
  *  - as each instruction passes, we increment the code section counter by the size of the instruction
@@ -220,7 +71,7 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 	char *source_line_token;
 	char *directive;
 	char symbol_name[30];
-	u_short inst_length;
+	word_t instruction_length;
 	bool is_inst;
 	word addr = {0};
 
@@ -230,15 +81,19 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 			" \t",
 			&source_line_e);
 
-	if ((inst_length = is_instruction_internal(source_line_token)))
+	if (is_instruction(source_line_token))
 	{
+		instruction_length = get_instruction_length(source_line);
 		/* handle instruction */
-		prog_obj->ic->data += inst_length;
+		prog_obj->ic->data += instruction_length->data;
 	}
 	else if ((directive = is_directive(source_line_token)))
 	{
-		/* handle guidance statement */
-		handle_directive(source_line, prog_obj, true);
+		/* handle directive */
+		handle_directive(
+				source_line,
+				prog_obj,
+				true);
 	}
 	else if (strchr(source_line_token, ':')) /* is symbol */
 	{
@@ -278,9 +133,10 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 				is_inst = true;
 				addr.data = prog_obj->ic->data;
 
-				if ((inst_length = is_instruction_internal(strchr(source_line, ':') + 1)))
+				if (is_instruction(strchr(source_line, ':') + 1))
 				{
-					prog_obj->ic->data += inst_length;
+					instruction_length = get_instruction_length(strchr(source_line, ':') + 1);
+					prog_obj->ic->data += instruction_length->data;
 				}
 				else
 				{
