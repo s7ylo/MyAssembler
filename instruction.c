@@ -42,7 +42,8 @@ static bool is_operand_reg(const char *operand)
 {
 	bool is_reg = false;
 	char *operand_cpy = strdup(operand);
-	char *token = strtok(operand_cpy, " \t,");
+	char *operand_cpy_e;
+	char *token = strtok_r(operand_cpy, " \t,", &operand_cpy_e);
 	int i;
 
 	for (i = 0; i < REGS_COUNT; i++)
@@ -62,10 +63,11 @@ bool is_instruction(const char *field)
 {
 	bool is_inst = false;
 	char *field_cpy = strdup(field);
+	char *field_cpy_e;
 	char *token;
 	int i;
 
-	token = strtok(field_cpy, " \t");
+	token = strtok_r(field_cpy, " \t", &field_cpy_e);
 
 	for (i = 0; i < AVAILABLE_INST_COUNT; i++)
 	{
@@ -85,10 +87,11 @@ word_t get_instruction_length(const char *instruction)
 {
 	word_t length = (word_t)calloc(1, sizeof(word));
 	char *instruction_cpy = strdup(instruction);
+	char *instruction_cpy_e;
 	char *token;
 	int i;
 
-	token = strtok(instruction_cpy, " \t,");
+	token = strtok_r(instruction_cpy, " \t,", &instruction_cpy_e);
 
 	for (i = 0; i < AVAILABLE_INST_COUNT; i++)
 	{
@@ -97,11 +100,11 @@ word_t get_instruction_length(const char *instruction)
 			if (available_instructions[i].length.data == 3)
 			{
 				/* if both operands register, return 2 as length */
-				token = strtok(NULL, " \t,");
+				token = strtok_r(NULL, " \t,", &instruction_cpy_e);
 
 				if (is_operand_reg(token))
 				{
-					token = strtok(NULL, " \t,");
+					token = strtok_r(NULL, " \t,", &instruction_cpy_e);
 
 					if (is_operand_reg(token))
 					{
@@ -130,4 +133,6 @@ assembled_instruction_t
 assemble_instruction(const char *instruction_line)
 {
 	char *instruction_line_cpy = strdup(instruction_line); // remember to free this at the end
+	free(instruction_line_cpy);
+	return NULL;
 }

@@ -160,6 +160,9 @@ program_object_t assembler_first_transition(const char *source)
 	char *source_cpy = strdup(source);
 	char *source_cpy_e;
 	char *source_line;
+	word data_symbol_addr = {0};
+	symbol_table_entry_t entry;
+	symbol_t sym;
 
 	prog_obj->ic->data = 100;
 	prog_obj->dc->data = 0;
@@ -180,8 +183,29 @@ program_object_t assembler_first_transition(const char *source)
 				&source_cpy_e);
 	}
 
+	/* once we're done walking through the lines
+	 * we need to update the addresses of the data symbols
+	 */
+	data_symbol_addr.data = prog_obj->ic->data;
+	entry = prog_obj->sym_tbl;
+
+	while (entry)
+	{
+		/* if this is a data symbol, update the address */
+		if (!entry->sym->is_external &&
+			!entry->sym->is_instruction)
+		{
+			entry->sym->address.data = data_symbol_addr.data;
+
+			/* increase the current address by the size of the data */
+		}
+
+		/* move to the next symbol */
+		entry = entry->next;
+	}
+
+
 	/* don't forget to free the copy of source code we made */
 	free(source_cpy);
-
 	return NULL;
 }

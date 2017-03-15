@@ -16,10 +16,11 @@ static char *available_directives[AVAILABLE_DIRECTIVE_COUNT] =
 char* is_directive(const char *field)
 {
 	char *field_cpy = strdup(field);
+	char *field_cpy_e;
 	char *token;
 	int i;
 
-	token = strtok(field_cpy, " \t");
+	token = strtok_r(field_cpy, " \t", &field_cpy_e);
 
 	for (i = 0; i < AVAILABLE_DIRECTIVE_COUNT; i++)
 	{
@@ -54,7 +55,7 @@ void handle_data_directive(
 	if (!strcasecmp(token, DIRECTIVE_DATA))
 	{
 		token = strtok_r(
-				directive_line_cpy,
+				NULL,
 				" \t,",
 				&directive_line_e);
 
@@ -67,7 +68,7 @@ void handle_data_directive(
 
 			/* move to the next number (in case it has another one) */
 			token = strtok_r(
-					directive_line_cpy,
+					NULL,
 					" \t,",
 					&directive_line_e);
 		}
