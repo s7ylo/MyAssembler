@@ -73,6 +73,7 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 	char symbol_name[30];
 	word_t instruction_length;
 	bool is_inst;
+	bool is_data;
 	word addr = {0};
 
 	/* split the line by spaces */
@@ -162,7 +163,6 @@ program_object_t assembler_first_transition(const char *source)
 	char *source_line;
 	word data_symbol_addr = {0};
 	symbol_table_entry_t entry;
-	symbol_t sym;
 
 	prog_obj->ic->data = 100;
 	prog_obj->dc->data = 0;

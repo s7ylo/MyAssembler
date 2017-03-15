@@ -9,13 +9,28 @@
 
 #define MAX_SYMBOL_NAME_LENGTH (30)
 
+typedef struct _symbol_data
+{
+	/* the symbol data type (.data or .string) */
+	word type;
+
+	/* the size of the data in words */
+	word size;
+} symbol_data, *symbol_data_t;
+
 typedef struct _symbol
 {
 	char name[MAX_SYMBOL_NAME_LENGTH];
-	word id;
 	word address;
 	bool is_external;
 	bool is_instruction;
+	bool is_data;
+
+	/* in case is_data is true
+	 * sym_data will be filled with the data info
+	 * otherwise, NULL
+	 */
+	symbol_data_t sym_data;
 } symbol, *symbol_t;
 
 typedef struct _symbol_table_entry
