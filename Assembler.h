@@ -48,25 +48,22 @@ typedef struct _program_object
 	word_t dc;
 } program_object, *program_object_t;
 
-typedef struct _source_line_info
-{
-	/* how many words to increase the instruction counter */
-	word ic;
+void
+handle_symbol(
+	program_object_t prog_obj,
+	const char *name,
+	bool external,
+	bool inst,
+	bool data,
+	word_t data_size,
+	word_t address);
 
-	/* how many words to increase the data counter */
-	word dc;
-} source_line_info, *source_line_info_t;
+program_object_t
+assembler_first_transition(const char *source);
 
-void handle_symbol(
-		program_object_t prog_obj,
-		const char *name,
-		bool external,
-		bool inst,
-		bool data,
-		word_t data_size,
-		word_t address);
-
-program_object_t assembler_first_transition(const char *source);
-program_object_t translate_source_code(const char *source_code);
+bool
+assembler_second_transition(
+		const char *source,
+		program_object_t prog_obj);
 
 #endif /* ASSEMBLER_H_ */

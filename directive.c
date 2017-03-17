@@ -104,7 +104,6 @@ word_t handle_directive(
 	char *directive_line_cpy = strdup(directive_line); // TODO: remember to free this at the end
 	char *directive_line_e;
 	char *token;
-	word_t data_size = NULL;
 
 	token = strtok_r(
 			directive_line_cpy,
@@ -140,7 +139,12 @@ word_t handle_directive(
 	}
 	else
 	{
-		// TODO: this
+		/* second transition handling */
+		if (!strcasecmp(token, DIRECTIVE_ENTRY))
+		{
+			// TODO: Retrieve the symbol from the symbol table
+		}
+
 		return NULL;
 	}
 

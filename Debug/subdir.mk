@@ -5,6 +5,7 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../Assembler.c \
+../assembler_entry.c \
 ../directive.c \
 ../instruction.c \
 ../logs.c \
@@ -13,6 +14,7 @@ C_SRCS += \
 
 OBJS += \
 ./Assembler.o \
+./assembler_entry.o \
 ./directive.o \
 ./instruction.o \
 ./logs.o \
@@ -21,6 +23,7 @@ OBJS += \
 
 C_DEPS += \
 ./Assembler.d \
+./assembler_entry.d \
 ./directive.d \
 ./instruction.d \
 ./logs.d \

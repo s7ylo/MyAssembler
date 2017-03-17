@@ -5,18 +5,13 @@
 #ifndef LOGS_H_
 #define LOGS_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
+#include "arch.h"
+
+#define WARNING "[MyAssembler Warning]:"
+#define ERROR   "[MyAssembler Error]:"
 
 void
-print_error_log(
-		const char *format,
-		...
-		);
-
-void
-print_warning_log(
+print_log(
 		const char *format,
 		...
 		);

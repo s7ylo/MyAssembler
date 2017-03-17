@@ -13,6 +13,8 @@ char* read_file_content(const char *szFileName);
  */
 int main(int argc, char *argv[])
 {
+	program_object_t prog_obj = NULL;
+	bool success;
 	char szFileName[260] = {0};
 	char *buffer;
 
@@ -25,8 +27,8 @@ int main(int argc, char *argv[])
 	strncpy(szFileName, argv[1], strlen(argv[1]));
 	buffer = read_file_content(szFileName);
 
-	assembler_first_transition(buffer);
-	// translate_source_code(buffer);
+	prog_obj = assembler_first_transition(buffer);
+	success = assembler_second_transition(buffer, prog_obj);
 
 	return 1;
 }

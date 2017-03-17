@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #define WORD_SIZE  (15)
 #define REGS_COUNT (8)

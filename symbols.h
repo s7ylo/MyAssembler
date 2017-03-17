@@ -9,15 +9,6 @@
 
 #define MAX_SYMBOL_NAME_LENGTH (30)
 
-typedef struct _symbol_data
-{
-	/* the symbol data type (.data or .string) */
-	word type;
-
-	/* the size of the data in words */
-	word size;
-} symbol_data, *symbol_data_t;
-
 typedef struct _symbol
 {
 	char name[MAX_SYMBOL_NAME_LENGTH];
@@ -34,11 +25,28 @@ typedef struct _symbol_table_entry
 	symbol_t sym;
 } symbol_table_entry, *symbol_table_entry_t;
 
-symbol_table_entry_t symbol_table_entry_alloc(void);
-symbol_t sym_alloc(void);
-void sym_free(symbol_t sym);
+symbol_table_entry_t
+symbol_table_entry_alloc(void);
 
-bool is_symbol_exist_in_table(symbol_table_entry_t sym_table, const char *sym_name);
-void insert_symbol_to_table(symbol_table_entry_t *head, symbol_t sym);
+symbol_t
+sym_alloc(void);
+
+void
+sym_free(symbol_t sym);
+
+bool
+is_symbol_exist_in_table(
+		symbol_table_entry_t sym_table,
+		const char *sym_name);
+
+void
+insert_symbol_to_table(
+		symbol_table_entry_t *head,
+		symbol_t sym);
+
+symbol_t
+lookup_symbol_by_name(
+		symbol_table_entry_t sym_table,
+		const char *name);
 
 #endif /* SYMBOLS_H_ */
