@@ -35,7 +35,9 @@ char* is_directive(const char *field)
 	return NULL;
 }
 
-void handle_data_directive(
+/* handle_data_directive return value is the size of the data in words
+ */
+static word_t handle_data_directive(
 		const char *directive_line,
 		program_object_t prog_obj)
 {
@@ -45,6 +47,7 @@ void handle_data_directive(
 	char *string_value = NULL;
 	u_short string_length;
 	u_short i;
+	word_t data_size = (word_t)calloc(1, sizeof(word));
 
 	/* extract the directive (.string or .data) */
 	token = strtok_r(
@@ -65,6 +68,7 @@ void handle_data_directive(
 
 			/* increase data counter by one */
 			prog_obj->dc->data++;
+			data_size->data++;
 
 			/* move to the next number (in case it has another one) */
 			token = strtok_r(
@@ -85,11 +89,14 @@ void handle_data_directive(
 
 		/* set the null terminator */
 		prog_obj->prog_image.data_image[prog_obj->prog_image.data_image_length.data++].data = 0;
-		prog_obj->dc->data += string_length + 1;
+		prog_obj->dc->data += (string_length + 1);
+		data_size->data = (string_length + 1);
 	}
+
+	return data_size;
 }
 
-u_short handle_directive(
+word_t handle_directive(
 		const char *directive_line,
 		program_object_t prog_obj,
 		bool is_first_transition)
@@ -97,6 +104,7 @@ u_short handle_directive(
 	char *directive_line_cpy = strdup(directive_line); // TODO: remember to free this at the end
 	char *directive_line_e;
 	char *token;
+	word_t data_size = NULL;
 
 	token = strtok_r(
 			directive_line_cpy,
@@ -116,24 +124,26 @@ u_short handle_directive(
 			handle_symbol(
 					prog_obj,
 					token,
-					true,
-					false,
+					true,  /* is external */
+					false, /* is instruction */
+					false, /* is data */
+					NULL, /* data size */
 					0);
 
-			return 0;
+			return NULL;
 		}
 		else if (!strcasecmp(token, DIRECTIVE_STRING) ||
 				  !strcasecmp(token, DIRECTIVE_DATA))
 		{
-			handle_data_directive(directive_line, prog_obj);
+			return handle_data_directive(directive_line, prog_obj);
 		}
 	}
 	else
 	{
-		// TODO: Shouldn't be 0
-		return 0;
+		// TODO: this
+		return NULL;
 	}
 
-	// TODO: Shouldn't be 0
-	return 0;
+	// TODO: this
+	return NULL;
 }

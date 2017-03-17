@@ -25,12 +25,7 @@ typedef struct _symbol
 	bool is_external;
 	bool is_instruction;
 	bool is_data;
-
-	/* in case is_data is true
-	 * sym_data will be filled with the data info
-	 * otherwise, NULL
-	 */
-	symbol_data_t sym_data;
+	word data_size;
 } symbol, *symbol_t;
 
 typedef struct _symbol_table_entry
@@ -44,6 +39,6 @@ symbol_t sym_alloc(void);
 void sym_free(symbol_t sym);
 
 bool is_symbol_exist_in_table(symbol_table_entry_t sym_table, const char *sym_name);
-void insert_symbol_to_table(symbol_table_entry_t sym_table, symbol_t sym);
+void insert_symbol_to_table(symbol_table_entry_t *head, symbol_t sym);
 
 #endif /* SYMBOLS_H_ */

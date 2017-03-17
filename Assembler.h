@@ -34,6 +34,9 @@ typedef struct _program_image
 
 typedef struct _program_object
 {
+	// TODO: list of entries for the entry file
+	// TODO: list of externals for the extarnal file
+
 	/* the program's image */
 	program_image prog_image;
 
@@ -59,6 +62,8 @@ void handle_symbol(
 		const char *name,
 		bool external,
 		bool inst,
+		bool data,
+		word_t data_size,
 		word_t address);
 
 program_object_t assembler_first_transition(const char *source);

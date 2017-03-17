@@ -7,6 +7,7 @@ C_SRCS += \
 ../Assembler.c \
 ../directive.c \
 ../instruction.c \
+../logs.c \
 ../main.c \
 ../symbols.c 
 
@@ -14,6 +15,7 @@ OBJS += \
 ./Assembler.o \
 ./directive.o \
 ./instruction.o \
+./logs.o \
 ./main.o \
 ./symbols.o 
 
@@ -21,6 +23,7 @@ C_DEPS += \
 ./Assembler.d \
 ./directive.d \
 ./instruction.d \
+./logs.d \
 ./main.d \
 ./symbols.d 
 

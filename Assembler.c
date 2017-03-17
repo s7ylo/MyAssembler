@@ -11,7 +11,7 @@ static program_object_t initialize_program_object(void)
 	if (!prog_obj)
 		return NULL;
 
-	prog_obj->sym_tbl = symbol_table_entry_alloc();
+	prog_obj->sym_tbl = NULL;
 	prog_obj->ic = (word_t)calloc(1, sizeof(word));
 	prog_obj->dc = (word_t)calloc(1, sizeof(word));
 
@@ -23,6 +23,8 @@ void handle_symbol(
 		const char *name,
 		bool external,
 		bool inst,
+		bool data,
+		word_t data_size,
 		word_t address)
 {
 	symbol_t sym;
@@ -48,13 +50,17 @@ void handle_symbol(
 
 	sym->is_external = external;
 	sym->is_instruction = inst;
+	sym->is_data = data;
+
+	if (data_size)
+		sym->data_size.data = data_size->data;
 
 	if (address)
 		sym->address.data = address->data;
 	else
 		sym->address.data = 0;
 
-	insert_symbol_to_table(prog_obj->sym_tbl, sym);
+	insert_symbol_to_table(&prog_obj->sym_tbl, sym);
 }
 
 /* at the first transition we pass the code and addressing only the following
@@ -70,8 +76,9 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 	char *source_line_e;
 	char *source_line_token;
 	char *directive;
-	char symbol_name[30];
+	char symbol_name[MAX_SYMBOL_NAME_LENGTH];
 	word_t instruction_length;
+	word_t data_size = NULL;
 	bool is_inst;
 	bool is_data;
 	word addr = {0};
@@ -109,7 +116,13 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 		if (!strcasecmp(source_line_token, DIRECTIVE_ENTRY) ||
 			!strcasecmp(source_line_token, DIRECTIVE_EXTERN))
 		{
+			// TODO: Write warning for unused symbol
+
 			/* handle directive */
+			handle_directive(
+					strchr(source_line, ':') + 1,
+					prog_obj,
+					true);
 		}
 		else
 		{
@@ -121,17 +134,19 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 			if (!strcasecmp(source_line_token, DIRECTIVE_DATA) ||
 				!strcasecmp(source_line_token, DIRECTIVE_STRING))
 			{
-				handle_directive(
-						strchr(source_line, ':') + 1,
-						prog_obj,
-						true);
+				addr.data = prog_obj->dc->data;
+				data_size = handle_directive(
+								strchr(source_line, ':') + 1,
+								prog_obj,
+								true);
 
 				is_inst = false;
-				addr.data = prog_obj->dc->data;
+				is_data = true;
 			}
 			else
 			{
 				is_inst = true;
+				is_data = false;
 				addr.data = prog_obj->ic->data;
 
 				if (is_instruction(strchr(source_line, ':') + 1))
@@ -150,9 +165,13 @@ void assembler_first_transition_single_line(const char *source_line, program_obj
 					strtok(symbol_name, " \t"),
 					false,
 					is_inst,
+					is_data,
+					data_size, /* data size */
 					&addr);
 		}
 	}
+
+	free(source_line_cpy);
 }
 
 program_object_t assembler_first_transition(const char *source)
@@ -192,12 +211,12 @@ program_object_t assembler_first_transition(const char *source)
 	while (entry)
 	{
 		/* if this is a data symbol, update the address */
-		if (!entry->sym->is_external &&
-			!entry->sym->is_instruction)
+		if (entry->sym->is_data)
 		{
 			entry->sym->address.data = data_symbol_addr.data;
 
 			/* increase the current address by the size of the data */
+			data_symbol_addr.data += entry->sym->data_size.data;
 		}
 
 		/* move to the next symbol */
