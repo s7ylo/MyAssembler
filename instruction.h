@@ -20,7 +20,13 @@
 #define INSTRUCTION_OPCODE(x) (x << 6)
 #define INSTRUCTION_GROUP(x)  (x << 10)
 
-enum InstructionIdentifier
+/* Operand types */
+#define OPERAND_IMMEDIATE     (0)
+#define OPERAND_ADDRESS       (1)
+#define OPERAND_REG_INDEX     (2)
+#define OPERAND_REGISTER      (3)
+
+enum InstructionId
 {
 	Mov = 0,
 	Cmp,
@@ -40,20 +46,18 @@ enum InstructionIdentifier
 	Stop
 };
 
-enum OperandType
-{
-	Immediate = 0,
-	Address,
-	RegIndex,
-	Register
-};
-
 typedef struct _instruction_info
 {
 	u_short identifier;
 	char name[5];
 	word length;
 } instruction_info, *instruction_info_t;
+
+typedef struct _reg_info
+{
+	u_short id;
+	char name[3];
+} reg_info, *reg_info_t;
 
 typedef struct _assembled_instruction
 {
@@ -65,10 +69,16 @@ typedef struct _assembled_instruction
 
 } assembled_instruction, *assembled_instruction_t;
 
-bool is_instruction(const char *field);
-word_t get_instruction_length(const char *instruction);
+bool
+is_instruction(
+		const char *field);
+
+word_t
+get_instruction_length(
+		const char *instruction);
 
 assembled_instruction_t
-assemble_instruction(const char *instruction_line);
+assemble_instruction(
+		const char *instruction_line);
 
 #endif /* INSTRUCTION_H_ */
