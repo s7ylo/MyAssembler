@@ -132,7 +132,25 @@ word_t get_instruction_length(const char *instruction)
 assembled_instruction_t
 assemble_instruction(const char *instruction_line)
 {
-	char *instruction_line_cpy = strdup(instruction_line); // remember to free this at the end
+	assembled_instruction_t asm_inst = (assembled_instruction_t)calloc(1, sizeof(assembled_instruction));
+	word_t inst_length = NULL;
+	char *instruction_line_cpy = strdup(instruction_line);
+
+	inst_length = get_instruction_length(instruction_line_cpy);
+	asm_inst->opcode = (word**)calloc(1, sizeof(word*));
+
+	/* based on the length we allocate the amount of words we need for the opcodes */
+	*(asm_inst->opcode) = (word_t)calloc(inst_length->data, sizeof(word));
+	asm_inst->length.data = inst_length->data;
+
+	/* this is the part where we create the instruction's opcodes */
+	/* the first opcode (word) characterize the entire instruction.
+	 * also the first opcode's encoding is absolute */
+	asm_inst->opcode[0] = ENCODE_ABSOLUTE;
+
+	/* set source operand */
+
+
 	free(instruction_line_cpy);
 	return NULL;
 }

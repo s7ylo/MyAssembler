@@ -10,6 +10,8 @@
 #include "directive.h"
 #include "instruction.h"
 
+#define CODE_SECTION_BASE (100)
+
 typedef struct _program_image
 {
 	/* the size in words of the code length */
@@ -24,9 +26,6 @@ typedef struct _program_image
 
 typedef struct _program_object
 {
-	// TODO: list of entries for the entry file
-	// TODO: list of externals for the extarnal file
-
 	/* the program's image */
 	program_image prog_image;
 
@@ -36,6 +35,11 @@ typedef struct _program_object
 	/* instruction and data counters */
 	word_t ic;
 	word_t dc;
+
+	/* the size in words of the code section */
+	word_t code_size;
+	/* the size in words of the data section */
+	word_t data_size;
 } program_object, *program_object_t;
 
 void

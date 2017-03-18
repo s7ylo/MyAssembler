@@ -7,7 +7,18 @@
 
 #include "arch.h"
 
-#define AVAILABLE_INST_COUNT (16)
+#define AVAILABLE_INST_COUNT  (16)
+
+/* encodings */
+#define ENCODE_ABSOLUTE       (0)
+#define ENCODE_EXTERNAL       (1)
+#define ENCODE_RELOCATABLE    (2)
+
+/* Macros */
+#define INSTRUCTION_DST_OP(x) (x << 2)
+#define INSTRUCTION_SRC_OP(x) (x << 4)
+#define INSTRUCTION_OPCODE(x) (x << 6)
+#define INSTRUCTION_GROUP(x)  (x << 10)
 
 enum InstructionIdentifier
 {
@@ -50,7 +61,7 @@ typedef struct _assembled_instruction
 	word length;
 
 	/* pointer to an array of words that represent the opcode of the assembled instruction */
-	word_t **opcode;
+	word **opcode;
 
 } assembled_instruction, *assembled_instruction_t;
 

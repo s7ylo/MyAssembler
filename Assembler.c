@@ -15,6 +15,8 @@ static program_object_t initialize_program_object(void)
 	prog_obj->sym_tbl = NULL;
 	prog_obj->ic = (word_t)calloc(1, sizeof(word));
 	prog_obj->dc = (word_t)calloc(1, sizeof(word));
+	prog_obj->code_size = (word_t)calloc(1, sizeof(word));
+	prog_obj->data_size = (word_t)calloc(1, sizeof(word));
 
 	return prog_obj;
 }
@@ -180,17 +182,17 @@ assembler_first_transition_single_line(
 			{
 				addr.data = prog_obj->ic->data;
 
-				if (sym)
-				{
-					sym->flags.data |= SYMBOL_TYPE_INST;
-				}
-				else
-				{
-					flags.data = SYMBOL_TYPE_INST;
-				}
-
 				if (is_instruction(strchr(source_line, ':') + 1))
 				{
+					if (sym)
+					{
+						sym->flags.data |= SYMBOL_TYPE_INST;
+					}
+					else
+					{
+						flags.data = SYMBOL_TYPE_INST;
+					}
+
 					instruction_length = get_instruction_length(strchr(source_line, ':') + 1);
 					prog_obj->ic->data += instruction_length->data;
 				}
@@ -243,6 +245,7 @@ assembler_second_transition_single_line(
 	char *source_line_e;
 	char *source_line_token;
 	char *directive = NULL;
+	assembled_instruction_t asm_inst = NULL;
 
 	/* split the line by spaces */
 	source_line_token = strtok_r(
@@ -252,14 +255,33 @@ assembler_second_transition_single_line(
 
 	if (is_instruction(source_line_token))
 	{
+		asm_inst = assemble_instruction(source_line_token);
 	}
 	else if ((directive = is_directive(source_line_token)))
 	{
-		/* handle directive, second stage */
-		handle_directive(
-				source_line,
-				prog_obj,
-				false);
+	}
+	else if (strchr(source_line_token, ':')) /* is symbol */
+	{
+		/* extract the next token */
+		source_line_token = strtok_r(
+				NULL,
+				" ",
+				&source_line_e);
+
+		if (is_directive(source_line_token))
+		{
+		}
+		else /* instruction */
+		{
+			asm_inst = assemble_instruction(source_line_token);
+		}
+	}
+	else
+	{
+		print_log(
+			"%s Unfamiliar syntax at line: %d\n",
+			ERROR,
+			line_number);
 	}
 }
 
@@ -275,7 +297,7 @@ assembler_first_transition(
 	char *source_cpy_e;
 	char *source_line;
 
-	prog_obj->ic->data = 100;
+	prog_obj->ic->data = CODE_SECTION_BASE;
 	prog_obj->dc->data = 0;
 
 	source_line = strtok_r(
@@ -317,6 +339,9 @@ assembler_first_transition(
 		/* move to the next symbol */
 		entry = entry->next;
 	}
+
+	prog_obj->code_size->data = (prog_obj->ic->data - CODE_SECTION_BASE);
+	prog_obj->data_size->data = prog_obj->dc->data;
 
 	/* don't forget to free the copy of source code we made */
 	free(source_cpy);
