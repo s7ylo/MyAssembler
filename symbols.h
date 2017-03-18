@@ -9,13 +9,20 @@
 
 #define MAX_SYMBOL_NAME_LENGTH (30)
 
+#define SYMBOL_TYPE_DATA       (0x1)
+#define SYMBOL_TYPE_INST       (0x2)
+#define SYMBOL_TYPE_EXTERN     (0x4)
+#define SYMBOL_TYPE_ENTRY      (0x8)
+
 typedef struct _symbol
 {
 	char name[MAX_SYMBOL_NAME_LENGTH];
 	word address;
-	bool is_external;
-	bool is_instruction;
-	bool is_data;
+
+	/* indicates the type of the symbol */
+	word flags;
+
+	/* if flags value contain 'SYMBOL_TYPE_DATA' this field holds the size of the data in words */
 	word data_size;
 } symbol, *symbol_t;
 

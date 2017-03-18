@@ -22,9 +22,7 @@ static program_object_t initialize_program_object(void)
 void handle_symbol(
 		program_object_t prog_obj,
 		const char *name,
-		bool external,
-		bool inst,
-		bool data,
+		word_t flags,
 		word_t data_size,
 		word_t address)
 {
@@ -57,12 +55,16 @@ void handle_symbol(
 		name,
 		strlen(name));
 
-	sym->is_external = external;
-	sym->is_instruction = inst;
-	sym->is_data = data;
+	// Flags update
+	sym->flags.data = flags->data;
 
-	if (data_size)
-		sym->data_size.data = data_size->data;
+	if (sym->flags.data & SYMBOL_TYPE_DATA)
+	{
+		if (data_size)
+		{
+			sym->data_size.data = data_size->data;
+		}
+	}
 
 	if (address)
 		sym->address.data = address->data;
@@ -84,18 +86,19 @@ void
 assembler_first_transition_single_line(
 		const char *source_line,
 		program_object_t prog_obj,
-		u_short line_number)
+		ushort line_number)
 {
 	char *source_line_cpy = strdup(source_line);
 	char *source_line_e;
 	char *source_line_token;
 	char *directive;
 	char symbol_name[MAX_SYMBOL_NAME_LENGTH];
+	char *name_cpy = NULL;
+	symbol_t sym = NULL;
 	word_t instruction_length;
 	word_t data_size = NULL;
-	bool is_inst;
-	bool is_data;
 	word addr = {0};
+	word flags = {0};
 
 	/* split the line by spaces */
 	source_line_token = strtok_r(
@@ -135,7 +138,6 @@ assembler_first_transition_single_line(
 		if (!strcasecmp(source_line_token, DIRECTIVE_ENTRY) ||
 			!strcasecmp(source_line_token, DIRECTIVE_EXTERN))
 		{
-			// TODO: Write warning for unused symbol
 			print_log(
 				"%s Unused symbol %s at line: %d\n",
 				WARNING,
@@ -150,6 +152,11 @@ assembler_first_transition_single_line(
 		}
 		else
 		{
+			// need to remove spaces and tabs from the name in order to get the exact name
+			name_cpy = strdup(symbol_name);
+			sym = lookup_symbol_by_name(
+					prog_obj->sym_tbl,
+					strtok(name_cpy, " \t"));
 
 			if (!strcasecmp(source_line_token, DIRECTIVE_DATA) ||
 				!strcasecmp(source_line_token, DIRECTIVE_STRING))
@@ -160,14 +167,27 @@ assembler_first_transition_single_line(
 								prog_obj,
 								true);
 
-				is_inst = false;
-				is_data = true;
+				if (sym)
+				{
+					sym->flags.data |= SYMBOL_TYPE_DATA;
+				}
+				else
+				{
+					flags.data = SYMBOL_TYPE_DATA;
+				}
 			}
 			else
 			{
-				is_inst = true;
-				is_data = false;
 				addr.data = prog_obj->ic->data;
+
+				if (sym)
+				{
+					sym->flags.data |= SYMBOL_TYPE_INST;
+				}
+				else
+				{
+					flags.data = SYMBOL_TYPE_INST;
+				}
 
 				if (is_instruction(strchr(source_line, ':') + 1))
 				{
@@ -181,19 +201,18 @@ assembler_first_transition_single_line(
 						ERROR,
 						strchr(source_line, ':') + 1,
 						line_number);
-
-					//printf("[!] Unknown instruction: %s\n", strchr(source_line, ':') + 1);
 				}
 			}
 
-			handle_symbol(
-					prog_obj,
-					strtok(symbol_name, " \t"),
-					false,
-					is_inst,
-					is_data,
-					data_size, /* data size */
-					&addr);
+			if (!sym)
+			{
+				handle_symbol(
+						prog_obj,
+						strtok(symbol_name, " \t"),
+						&flags,
+						data_size,
+						&addr);
+			}
 		}
 	}
 	else
@@ -218,7 +237,7 @@ void
 assembler_second_transition_single_line(
 		const char *source_line,
 		program_object_t prog_obj,
-		u_short line_number)
+		ushort line_number)
 {
 	char *source_line_cpy = strdup(source_line);
 	char *source_line_e;
@@ -250,7 +269,7 @@ assembler_first_transition(
 {
 	program_object_t prog_obj = initialize_program_object();
 	symbol_table_entry_t entry;
-	u_int16_t line_number = 1;
+	ushort line_number = 1;
 	word data_symbol_addr = {0};
 	char *source_cpy = strdup(source);
 	char *source_cpy_e;
@@ -287,7 +306,7 @@ assembler_first_transition(
 	while (entry)
 	{
 		/* if this is a data symbol, update the address */
-		if (entry->sym->is_data)
+		if (entry->sym->flags.data & SYMBOL_TYPE_DATA)
 		{
 			entry->sym->address.data = data_symbol_addr.data;
 
@@ -309,7 +328,7 @@ assembler_second_transition(
 		const char *source,
 		program_object_t prog_obj)
 {
-	u_int16_t line_number = 1;
+	ushort line_number = 1;
 	char *source_cpy = strdup(source);
 	char *source_cpy_e;
 	char *source_line;

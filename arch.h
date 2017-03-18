@@ -14,6 +14,8 @@
 #define WORD_SIZE  (15)
 #define REGS_COUNT (8)
 
+typedef unsigned short ushort;
+
 typedef struct _word
 {
 	unsigned short data:WORD_SIZE;

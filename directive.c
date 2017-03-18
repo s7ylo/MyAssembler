@@ -45,8 +45,8 @@ static word_t handle_data_directive(
 	char *directive_line_e;
 	char *token;
 	char *string_value = NULL;
-	u_short string_length;
-	u_short i;
+	ushort string_length; // TODO: Consider using word
+	ushort i;
 	word_t data_size = (word_t)calloc(1, sizeof(word));
 
 	/* extract the directive (.string or .data) */
@@ -101,9 +101,11 @@ word_t handle_directive(
 		program_object_t prog_obj,
 		bool is_first_transition)
 {
-	char *directive_line_cpy = strdup(directive_line); // TODO: remember to free this at the end
+	char *directive_line_cpy = strdup(directive_line);
 	char *directive_line_e;
 	char *token;
+	symbol_t sym = NULL;
+	word flags = {0};
 
 	token = strtok_r(
 			directive_line_cpy,
@@ -112,42 +114,67 @@ word_t handle_directive(
 
 	if (is_first_transition)
 	{
-		/* in the first transition we ignore the '.entry' statement */
+		if (!strcasecmp(token, DIRECTIVE_STRING) ||
+			!strcasecmp(token, DIRECTIVE_DATA))
+		{
+			free(directive_line_cpy);
+			return handle_data_directive(directive_line, prog_obj);
+		}
+
 		if (!strcasecmp(token, DIRECTIVE_EXTERN))
 		{
+			/* extract the symbol name */
 			token = strtok_r(
 					NULL,
 					" \t",
 					&directive_line_e);
 
+			flags.data = SYMBOL_TYPE_EXTERN;
+
 			handle_symbol(
 					prog_obj,
 					token,
-					true,  /* is external */
-					false, /* is instruction */
-					false, /* is data */
+					&flags,
 					NULL, /* data size */
 					0);
-
-			return NULL;
 		}
-		else if (!strcasecmp(token, DIRECTIVE_STRING) ||
-				  !strcasecmp(token, DIRECTIVE_DATA))
+		else /* in case of .entry */
 		{
-			return handle_data_directive(directive_line, prog_obj);
+			/* extract the symbol name */
+			token = strtok_r(
+					NULL,
+					" \t",
+					&directive_line_e);
+
+			/* check if symbol exist before adding it into the symbol table */
+			sym = lookup_symbol_by_name(
+					prog_obj->sym_tbl,
+					token);
+
+			if (sym)
+			{
+				sym->flags.data |= SYMBOL_TYPE_ENTRY;
+			}
+			else /* in case it doesn't exist, add to symbol table */
+			{
+				flags.data = SYMBOL_TYPE_ENTRY;
+
+				handle_symbol(
+						prog_obj,
+						token,
+						&flags,
+						NULL, /* data size */
+						0);
+			}
 		}
 	}
-	else
+	else /* second transition */
 	{
-		/* second transition handling */
-		if (!strcasecmp(token, DIRECTIVE_ENTRY))
-		{
-			// TODO: Retrieve the symbol from the symbol table
-		}
-
+		free(directive_line_cpy);
 		return NULL;
 	}
 
 	// TODO: this
+	free(directive_line_cpy);
 	return NULL;
 }

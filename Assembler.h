@@ -10,16 +10,6 @@
 #include "directive.h"
 #include "instruction.h"
 
-typedef struct _instruction
-{
-	/* instruction length in words */
-	word length;
-
-	word w1;
-	word w2;
-	word w3;
-} instruction, *instruction_t;
-
 typedef struct _program_image
 {
 	/* the size in words of the code length */
@@ -52,9 +42,7 @@ void
 handle_symbol(
 	program_object_t prog_obj,
 	const char *name,
-	bool external,
-	bool inst,
-	bool data,
+	word_t flags,
 	word_t data_size,
 	word_t address);
 
