@@ -48,7 +48,7 @@ enum InstructionId
 
 typedef struct _instruction_info
 {
-	u_short identifier;
+	word opcode;
 	char name[5];
 	word length;
 } instruction_info, *instruction_info_t;

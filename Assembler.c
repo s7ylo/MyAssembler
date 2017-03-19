@@ -255,7 +255,7 @@ assembler_second_transition_single_line(
 
 	if (is_instruction(source_line_token))
 	{
-		asm_inst = assemble_instruction(source_line_token);
+		asm_inst = assemble_instruction(source_line);
 	}
 	else if ((directive = is_directive(source_line_token)))
 	{
@@ -273,7 +273,7 @@ assembler_second_transition_single_line(
 		}
 		else /* instruction */
 		{
-			asm_inst = assemble_instruction(source_line_token);
+			asm_inst = assemble_instruction(strchr(source_line, ':') + 1);
 		}
 	}
 	else

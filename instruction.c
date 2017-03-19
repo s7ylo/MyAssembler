@@ -7,22 +7,22 @@
 /* all available instructions */
 static instruction_info available_instructions[AVAILABLE_INST_COUNT] =
 {
-		{ Mov, "mov", { 3 } },
-		{ Cmp, "cmp", { 3 } },
-		{ Add, "add", { 3 } },
-		{ Sub, "sub", { 3 } },
-		{ Lea, "lea", { 3 } },
-		{ Not, "not", { 2 } },
-		{ Clr, "clr", { 2 } },
-		{ Inc, "inc", { 2 } },
-		{ Dec, "dec", { 2 } },
-		{ Jmp, "jmp", { 2 } },
-		{ Bne, "bne", { 2 } },
-		{ Red, "red", { 2 } },
-		{ Prn, "prn", { 2 } },
-		{ Jsr, "jsr", { 2 } },
-		{ Rts, "rts", { 1 } },
-		{ Stop, "stop", { 1 } }
+		{ { Mov }, "mov", { 3 } },
+		{ { Cmp }, "cmp", { 3 } },
+		{ { Add }, "add", { 3 } },
+		{ { Sub }, "sub", { 3 } },
+		{ { Lea }, "lea", { 3 } },
+		{ { Not }, "not", { 2 } },
+		{ { Clr }, "clr", { 2 } },
+		{ { Inc }, "inc", { 2 } },
+		{ { Dec }, "dec", { 2 } },
+		{ { Jmp }, "jmp", { 2 } },
+		{ { Bne }, "bne", { 2 } },
+		{ { Red }, "red", { 2 } },
+		{ { Prn }, "prn", { 2 } },
+		{ { Jsr }, "jsr", { 2 } },
+		{ { Rts }, "rts", { 1 } },
+		{ { Stop }, "stop", { 1 } }
 };
 
 static reg_info available_registers[MaxReg] =
@@ -63,29 +63,31 @@ is_operand_reg(
 
 /* this function returns one of the operand types listed in instruction.h */
 static
-ushort
+word_t
 get_operand_type(
 		const char *operand)
 {
-	ushort type = OPERAND_ADDRESS;
+	word_t type = (word_t)calloc(1, sizeof(word));
 	char *operand_cpy = strdup(operand);
 	char *operand_cpy_e;
 	char *token = strtok_r(operand_cpy, " \t,", &operand_cpy_e);
 
+	type->data = OPERAND_ADDRESS;
+
 	if (token[0] == '#')
 	{
-		type = OPERAND_IMMEDIATE;
+		type->data = OPERAND_IMMEDIATE;
 		goto clean_and_return;
 	}
 	else if (is_operand_reg(operand_cpy))
 	{
-		type = OPERAND_REGISTER;
+		type->data = OPERAND_REGISTER;
 		goto clean_and_return;
 	}
 	else if (strchr(operand_cpy, '[') &&
 			 strchr(operand_cpy, ']'))
 	{
-		type = OPERAND_REG_INDEX;
+		type->data = OPERAND_REG_INDEX;
 	}
 
 clean_and_return:
@@ -94,39 +96,61 @@ clean_and_return:
 }
 
 static
-ushort
+word_t
 get_instruction_opcode(
 		const char *inst)
 {
-	return 0;
-}
-
-static
-static
-
-bool
-is_instruction(
-		const char *field)
-{
-	bool is_inst = false;
-	char *field_cpy = strdup(field);
-	char *field_cpy_e;
-	char *token;
-	int i;
-
-	token = strtok_r(field_cpy, " \t", &field_cpy_e);
+	word_t opcode = NULL;
+	ushort i;
+	char *inst_cpy = strdup(inst);
+	char *inst_cpy_e;
+	char *token = strtok_r(
+			inst_cpy,
+			" \t",
+			&inst_cpy_e);
 
 	for (i = 0; i < AVAILABLE_INST_COUNT; i++)
 	{
 		if (!strcasecmp(token, available_instructions[i].name))
 		{
-			is_inst = true;
+			opcode = (word_t)calloc(1, sizeof(word));
+			opcode->data = available_instructions[i].opcode.data;
 			break;
 		}
 	}
 
-	free(field_cpy);
-	return is_inst;
+	free(inst_cpy);
+	return opcode;
+}
+
+static
+word_t
+get_instruction_length_no_changes(
+		const char *instruction)
+{
+	word_t len = NULL;
+	ushort i;
+	char *instruction_cpy = strdup(instruction);
+	char *instruction_cpy_e;
+	char *token;
+
+	token = strtok_r(
+			instruction_cpy,
+			" \t",
+			&instruction_cpy_e);
+
+	for (i = 0; i < AVAILABLE_INST_COUNT; i++)
+	{
+		if (!strcasecmp(token, available_instructions[i].name))
+		{
+			len = (word_t)calloc(1, sizeof(word));
+			len->data = available_instructions[i].length.data;
+			break;
+		}
+	}
+
+	free(instruction_cpy);
+	return len;
 }
 
 word_t
@@ -177,6 +201,31 @@ get_instruction_length(
 	return length;
 }
 
+bool
+is_instruction(
+		const char *field)
+{
+	bool is_inst = false;
+	char *field_cpy = strdup(field);
+	char *field_cpy_e;
+	char *token;
+	int i;
+
+	token = strtok_r(field_cpy, " \t", &field_cpy_e);
+
+	for (i = 0; i < AVAILABLE_INST_COUNT; i++)
+	{
+		if (!strcasecmp(token, available_instructions[i].name))
+		{
+			is_inst = true;
+			break;
+		}
+	}
+
+	free(field_cpy);
+	return is_inst;
+}
+
 assembled_instruction_t
 assemble_instruction(
 		const char *instruction_line)
@@ -202,22 +251,43 @@ assemble_instruction(
 	token = strtok_r(
 			instruction_line_cpy,
 			" \t,",
-			&instruction_line_cpy);
+			&instruction_line_cpy_e);
+
 	/* set the instruction opcode */
-	asm_inst->opcode[0]->data |= INSTRUCTION_OPCODE(get_instruction_opcode(token));
+	asm_inst->opcode[0]->data |= INSTRUCTION_OPCODE(get_instruction_opcode(token)->data);
 
-	// TODO: Check if we are dealing with 3 opcodes length instruction but with two registers as operands (length is 2)
-
-	/* set source operand
-	 * source operand is available on 3 words length instructions
+	/* we get the instruction length again, but now without changes
+	 * so that we can handle the correct number of operands to a 3 opcodes length instructions
+	 * that has both operands as register
 	 */
+	inst_length = get_instruction_length_no_changes(instruction_line);
 	if (inst_length->data == 3)
 	{
-		asm_inst->opcode[0]->data |= INSTRUCTION_SRC_OP(get_operand_type())
+		/* extract source operand */
+		token = strtok_r(
+				NULL,
+				" \t,",
+				&instruction_line_cpy_e);
+
+		asm_inst->opcode[0]->data |= INSTRUCTION_SRC_OP(get_operand_type(token)->data);
+
+		/* extract dest operand */
+		token = strtok_r(
+				NULL,
+				" \t,",
+				&instruction_line_cpy_e);
+
+		asm_inst->opcode[0]->data |= INSTRUCTION_DST_OP(get_operand_type(token)->data);
 	}
 	else /* no source operand in available, set to 0 */
 	{
+		token = strtok_r(
+				NULL,
+				" \t,",
+				&instruction_line_cpy_e);
+
 		asm_inst->opcode[0]->data |= INSTRUCTION_SRC_OP(0);
+		asm_inst->opcode[0]->data |= INSTRUCTION_DST_OP(get_operand_type(token)->data);
 	}
 
 	free(instruction_line_cpy);
