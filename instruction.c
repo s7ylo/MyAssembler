@@ -3,6 +3,8 @@
  */
 
 #include "instruction.h"
+#include "symbols.h"
+#include "Assembler.h"
 
 /* all available instructions */
 static instruction_info available_instructions[AVAILABLE_INST_COUNT] =
@@ -96,6 +98,40 @@ clean_and_return:
 }
 
 static
+bool
+is_special_instruction(
+		const char *operands)
+{
+	bool is_special = false;
+	char *operands_cpy = strdup(operands);
+	char *operands_cpy_e;
+	char *token = strtok_r(
+			operands_cpy,
+			" \t,",
+			&operands_cpy_e);
+
+	if (get_operand_type(token)->data == OPERAND_REGISTER)
+	{
+		token = strtok_r(
+				NULL,
+				" \t,",
+				&operands_cpy_e);
+
+		if (get_operand_type(token)->data == OPERAND_REGISTER)
+		{
+			is_special = true;
+		}
+		else
+		{
+			is_special = false;
+		}
+	}
+
+	free(operands_cpy);
+	return is_special;
+}
+
+static
 word_t
 get_instruction_opcode(
 		const char *inst)
@@ -121,6 +157,88 @@ get_instruction_opcode(
 
 	free(inst_cpy);
 	return opcode;
+}
+
+static
+void
+assemble_single_operand(
+		const char *operand,
+		word_t operand_type,
+		ushort i,
+		assembled_instruction_t asm_inst,
+		program_object_t prog_obj)
+{
+	char *operand_cpy = strdup(operand);
+	symbol_t sym = NULL;
+
+	switch (operand_type->data)
+	{
+	case OPERAND_IMMEDIATE: /* for each of the below we use an absolute encode */
+	case OPERAND_REGISTER:
+	case OPERAND_REG_INDEX:
+		{
+			asm_inst->opcode[i]->data |= ENCODE_ABSOLUTE;
+		}
+		break;
+	case OPERAND_ADDRESS: /* this is a symbol, we use a relocatable encode */
+		{
+			/* before setting relocatable for a symbol
+			 * we check if this is an external symbol
+			 * and if it is, we set encode as external
+			 */
+			sym = lookup_symbol_by_name(prog_obj->sym_tbl, operand_cpy);
+
+			if (sym->flags.data & SYMBOL_TYPE_EXTERN)
+			{
+				asm_inst->opcode[i]->data |= ENCODE_EXTERNAL;
+			}
+			else
+			{
+				asm_inst->opcode[i]->data |= ENCODE_RELOCATABLE;
+			}
+		}
+		break;
+	}
+
+	free(operand_cpy);
+}
+
+static
+void
+assemble_operands(
+		const char *operands,
+		assembled_instruction_t asm_inst,
+		program_object_t prog_obj)
+{
+	word_t operand_type = NULL;
+	ushort i;
+	char *operands_cpy = strdup(operands);
+	char *operands_cpy_e;
+	char *token;
+
+	if (asm_inst->length.data == 3)
+	{
+		for (i = 1; i < 3; i++)
+		{
+			/* extract the next operand */
+			token = strtok_r(
+					operands_cpy,
+					" \t,",
+					&operands_cpy_e);
+
+			operand_type = get_operand_type(token);
+
+			assemble_single_operand(
+					token,
+					operand_type,
+					i,
+					asm_inst,
+					prog_obj);
+		}
+	}
+	else /* we handle one operand here, unless this is a 3 opcode instruction with two operands as register */
+	{
+	}
 }
 
 static
@@ -171,29 +289,19 @@ get_instruction_length(
 		{
 			if (available_instructions[i].length.data == 3)
 			{
-				/* if both operands register, return 2 as length */
-				token = strtok_r(NULL, " \t,", &instruction_cpy_e);
-
-				if (is_operand_reg(token))
+				if (is_special_instruction(instruction_cpy_e))
 				{
-					token = strtok_r(NULL, " \t,", &instruction_cpy_e);
-
-					if (is_operand_reg(token))
-					{
-						length->data = 2;
-						break;
-					}
-
-					length->data = 3;
-					break;
+					length->data = 2;
 				}
-
-				length->data = 3;
-				break;
+				else
+				{
+					length->data = 3;
+				}
 			}
-
-			length->data = available_instructions[i].length.data;
-			break;
+			else
+			{
+				length->data = available_instructions[i].length.data;
+			}
 		}
 	}
 
@@ -228,13 +336,14 @@ is_instruction(
 
 assembled_instruction_t
 assemble_instruction(
-		const char *instruction_line)
+		const char *instruction_line,
+		program_object_t prog_obj)
 {
 	assembled_instruction_t asm_inst = (assembled_instruction_t)calloc(1, sizeof(assembled_instruction));
 	word_t inst_length = NULL;
 	char *instruction_line_cpy = strdup(instruction_line);
 	char *instruction_line_cpy_e;
-	char *token;
+	char *token, *operands;
 
 	inst_length = get_instruction_length(instruction_line_cpy);
 	asm_inst->opcode = (word**)calloc(1, sizeof(word*));
@@ -253,6 +362,9 @@ assemble_instruction(
 			" \t,",
 			&instruction_line_cpy_e);
 
+	/* making a copy of the operands to handle later */
+	operands = strdup(instruction_line_cpy_e);
+
 	/* set the instruction opcode */
 	asm_inst->opcode[0]->data |= INSTRUCTION_OPCODE(get_instruction_opcode(token)->data);
 
@@ -261,35 +373,54 @@ assemble_instruction(
 	 * that has both operands as register
 	 */
 	inst_length = get_instruction_length_no_changes(instruction_line);
-	if (inst_length->data == 3)
+
+	/* set opcode group */
+	asm_inst->opcode[0]->data |= INSTRUCTION_GROUP((inst_length->data - 1));
+
+	/* bits 12 - 14 are unused and set to 1 */
+	asm_inst->opcode[0]->data |= INSTRUCTION_UNUSED(7); /* 7 in binary is 111 */
+
+	switch (inst_length->data)
 	{
-		/* extract source operand */
-		token = strtok_r(
-				NULL,
-				" \t,",
-				&instruction_line_cpy_e);
+	case 1: /* no operands */
+		{
+			asm_inst->opcode[0]->data |= INSTRUCTION_SRC_OP(0);
+			asm_inst->opcode[0]->data |= INSTRUCTION_DST_OP(0);
+		}
+		break;
+	case 2: /* only dest operand */
+		{
+			token = strtok_r(
+					NULL,
+					" \t,",
+					&instruction_line_cpy_e);
 
-		asm_inst->opcode[0]->data |= INSTRUCTION_SRC_OP(get_operand_type(token)->data);
+			asm_inst->opcode[0]->data |= INSTRUCTION_SRC_OP(0);
+			asm_inst->opcode[0]->data |= INSTRUCTION_DST_OP(get_operand_type(token)->data);
+		}
+		break; /* both source and dest operands */
+	case 3:
+		{
+			/* extract source operand */
+			token = strtok_r(
+					NULL,
+					" \t,",
+					&instruction_line_cpy_e);
 
-		/* extract dest operand */
-		token = strtok_r(
-				NULL,
-				" \t,",
-				&instruction_line_cpy_e);
+			asm_inst->opcode[0]->data |= INSTRUCTION_SRC_OP(get_operand_type(token)->data);
 
-		asm_inst->opcode[0]->data |= INSTRUCTION_DST_OP(get_operand_type(token)->data);
+			/* extract dest operand */
+			token = strtok_r(
+					NULL,
+					" \t,",
+					&instruction_line_cpy_e);
+
+			asm_inst->opcode[0]->data |= INSTRUCTION_DST_OP(get_operand_type(token)->data);
+		}
+		break;
 	}
-	else /* no source operand in available, set to 0 */
-	{
-		token = strtok_r(
-				NULL,
-				" \t,",
-				&instruction_line_cpy_e);
 
-		asm_inst->opcode[0]->data |= INSTRUCTION_SRC_OP(0);
-		asm_inst->opcode[0]->data |= INSTRUCTION_DST_OP(get_operand_type(token)->data);
-	}
-
+	free(operands);
 	free(instruction_line_cpy);
 	return NULL;
 }

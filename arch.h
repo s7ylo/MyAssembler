@@ -18,7 +18,7 @@ typedef unsigned short ushort;
 
 typedef struct _word
 {
-	unsigned short data:WORD_SIZE;
+	short data:WORD_SIZE;
 } word, *word_t;
 
 /* the cpu architecture */

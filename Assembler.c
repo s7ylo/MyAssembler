@@ -57,7 +57,7 @@ void handle_symbol(
 		name,
 		strlen(name));
 
-	// Flags update
+	/* Flags update */
 	sym->flags.data = flags->data;
 
 	if (sym->flags.data & SYMBOL_TYPE_DATA)
@@ -154,7 +154,7 @@ assembler_first_transition_single_line(
 		}
 		else
 		{
-			// need to remove spaces and tabs from the name in order to get the exact name
+			/* need to remove spaces and tabs from the name in order to get the exact name */
 			name_cpy = strdup(symbol_name);
 			sym = lookup_symbol_by_name(
 					prog_obj->sym_tbl,
@@ -255,7 +255,9 @@ assembler_second_transition_single_line(
 
 	if (is_instruction(source_line_token))
 	{
-		asm_inst = assemble_instruction(source_line);
+		asm_inst = assemble_instruction(
+				source_line,
+				prog_obj);
 	}
 	else if ((directive = is_directive(source_line_token)))
 	{
@@ -273,7 +275,9 @@ assembler_second_transition_single_line(
 		}
 		else /* instruction */
 		{
-			asm_inst = assemble_instruction(strchr(source_line, ':') + 1);
+			asm_inst = assemble_instruction(
+					strchr(source_line, ':') + 1,
+					prog_obj);
 		}
 	}
 	else

@@ -30,6 +30,13 @@ int main(int argc, char *argv[])
 	prog_obj = assembler_first_transition(buffer);
 	success = assembler_second_transition(buffer, prog_obj);
 
+	if (success)
+	{
+		fprintf(
+			stdout,
+			"Program assembled successfully\n");
+	}
+
 	return 1;
 }
 

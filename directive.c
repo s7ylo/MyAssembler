@@ -45,7 +45,7 @@ static word_t handle_data_directive(
 	char *directive_line_e;
 	char *token;
 	char *string_value = NULL;
-	ushort string_length; // TODO: Consider using word
+	ushort string_length; /* TODO: Consider using word */
 	ushort i;
 	word_t data_size = (word_t)calloc(1, sizeof(word));
 
@@ -174,7 +174,7 @@ word_t handle_directive(
 		return NULL;
 	}
 
-	// TODO: this
+	/* TODO: This */
 	free(directive_line_cpy);
 	return NULL;
 }
