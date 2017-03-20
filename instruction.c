@@ -173,11 +173,21 @@ assemble_single_operand(
 
 	switch (operand_type->data)
 	{
-	case OPERAND_IMMEDIATE: /* for each of the below we use an absolute encode */
+	case OPERAND_IMMEDIATE:
+		{
+			asm_inst->opcode[i]->data |= ENCODE_ABSOLUTE;
+		}
+		break;
 	case OPERAND_REGISTER:
+		{
+			asm_inst->opcode[i]->data |= ENCODE_ABSOLUTE;
+		}
+		break;
 	case OPERAND_REG_INDEX:
 		{
 			asm_inst->opcode[i]->data |= ENCODE_ABSOLUTE;
+
+			/* need to get the values of the outer register and the inner register separately */
 		}
 		break;
 	case OPERAND_ADDRESS: /* this is a symbol, we use a relocatable encode */
