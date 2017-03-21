@@ -169,45 +169,102 @@ assemble_single_operand(
 		program_object_t prog_obj)
 {
 	char *operand_cpy = strdup(operand);
+	char *operand_cpy_e;
+	char *source_reg, *dest_reg;
+	char sign;
+	word temp = {0};
 	symbol_t sym = NULL;
 
-	switch (operand_type->data)
+	/* if this is a special instruction, then we're dealing with both operands now
+	 * and the operand_type is ignored
+	 */
+	if (asm_inst->special_instruction)
 	{
-	case OPERAND_IMMEDIATE:
-		{
-			asm_inst->opcode[i]->data |= ENCODE_ABSOLUTE;
-		}
-		break;
-	case OPERAND_REGISTER:
-		{
-			asm_inst->opcode[i]->data |= ENCODE_ABSOLUTE;
-		}
-		break;
-	case OPERAND_REG_INDEX:
-		{
-			asm_inst->opcode[i]->data |= ENCODE_ABSOLUTE;
+		/* both operands are registers, so operand will be in the format of RX,RY
+		 * while X and Y are the id of the register
+		 */
+		source_reg = strtok_r(
+				operand_cpy,
+				" \t,",
+				&operand_cpy_e);
 
-			/* need to get the values of the outer register and the inner register separately */
-		}
-		break;
-	case OPERAND_ADDRESS: /* this is a symbol, we use a relocatable encode */
-		{
-			/* before setting relocatable for a symbol
-			 * we check if this is an external symbol
-			 * and if it is, we set encode as external
-			 */
-			sym = lookup_symbol_by_name(prog_obj->sym_tbl, operand_cpy);
+		dest_reg = strtok_r(
+				NULL,
+				" \t,",
+				&operand_cpy_e);
 
-			if (sym->flags.data & SYMBOL_TYPE_EXTERN)
+		/* encoding is absolute */
+		asm_inst->opcode[i]->data = ENCODE_ABSOLUTE;
+
+		/* we need this casting into a bigger size */
+		temp.data = source_reg[1] - 0x30; /* 0x31 is the ascii value of 0, so we subtract to get the real value of the number */
+		asm_inst->opcode[i]->data |= OPERAND_SET_SRC_REG(temp.data);
+
+		temp.data = dest_reg[1] - 0x30;
+		asm_inst->opcode[i]->data |= OPERAND_SET_DST_RET(temp.data);
+	}
+	else
+	{
+		return;
+		switch (operand_type->data)
+		{
+		case OPERAND_IMMEDIATE:
 			{
-				asm_inst->opcode[i]->data |= ENCODE_EXTERNAL;
+				asm_inst->opcode[i]->data |= ENCODE_ABSOLUTE;
+
+				/* we need to represent the immediate value in a 13 bit */
+				sign = operand_cpy[1];
+				if (sign == '-')
+				{
+					operand_cpy += 2;
+					temp.data = atoi(operand_cpy);
+					temp.data = ~temp.data;
+					temp.data++;
+					asm_inst->opcode[i]->data |= OPERAND_SET_IMMEDIATE(temp.data);
+				}
+				else if (sign == '+')
+				{
+					operand_cpy += 2;
+					asm_inst->opcode[i]->data |= OPERAND_SET_IMMEDIATE(atoi(operand_cpy));
+				}
+				else
+				{
+					operand_cpy++;
+					asm_inst->opcode[i]->data |= OPERAND_SET_IMMEDIATE(atoi(operand_cpy));
+				}
 			}
-			else
+			break;
+		case OPERAND_REGISTER:
 			{
-				asm_inst->opcode[i]->data |= ENCODE_RELOCATABLE;
+				asm_inst->opcode[i]->data |= ENCODE_ABSOLUTE;
 			}
+			break;
+		case OPERAND_REG_INDEX:
+			{
+				asm_inst->opcode[i]->data |= ENCODE_ABSOLUTE;
+
+				/* need to get the values of the outer register and the inner register separately */
+			}
+			break;
+		case OPERAND_ADDRESS: /* this is a symbol, we use a relocatable encode */
+			{
+				/* before setting relocatable for a symbol
+				 * we check if this is an external symbol
+				 * and if it is, we set encode as external
+				 */
+				sym = lookup_symbol_by_name(prog_obj->sym_tbl, operand_cpy);
+
+				if (sym->flags.data & SYMBOL_TYPE_EXTERN)
+				{
+					asm_inst->opcode[i]->data |= ENCODE_EXTERNAL;
+				}
+				else
+				{
+					asm_inst->opcode[i]->data |= ENCODE_RELOCATABLE;
+				}
+			}
+			break;
 		}
-		break;
 	}
 
 	free(operand_cpy);
@@ -221,32 +278,62 @@ assemble_operands(
 		program_object_t prog_obj)
 {
 	word_t operand_type = NULL;
-	ushort i;
+	ushort i = 1;
 	char *operands_cpy = strdup(operands);
 	char *operands_cpy_e;
 	char *token;
 
-	if (asm_inst->length.data == 3)
+	/* we have 3 different situations here
+	 *  - a single operand (dest operand only)
+	 *  - both source and dest operands
+	 *  - both source and dest operands as registers
+	 */
+	if (asm_inst->special_instruction)
 	{
-		for (i = 1; i < 3; i++)
+		assemble_single_operand(
+				operands_cpy,
+				OPERAND_IGNORED,
+				i,
+				asm_inst,
+				prog_obj);
+	}
+	else
+	{
+		if (asm_inst->length.data == 3)
 		{
-			/* extract the next operand */
-			token = strtok_r(
-					operands_cpy,
-					" \t,",
-					&operands_cpy_e);
-
-			operand_type = get_operand_type(token);
-
-			assemble_single_operand(
-					token,
-					operand_type,
-					i,
-					asm_inst,
-					prog_obj);
+		}
+		else
+		{
 		}
 	}
-	else /* we handle one operand here, unless this is a 3 opcode instruction with two operands as register */
+
+	if (asm_inst->length.data == 3 || asm_inst->special_instruction)
+	{
+		/* extract the source operand */
+		token = strtok_r(
+				operands_cpy,
+				" \t,",
+				&operands_cpy_e);
+
+		/* get the operand type */
+		operand_type = get_operand_type(token);
+
+		/* assemble operand (source) */
+		assemble_single_operand(
+				token,
+				operand_type,
+
+				1,
+				asm_inst,
+				prog_obj);
+
+		/* extract the dest operand */
+		token = strtok_r(
+				NULL,
+				" \t,",
+				&operands_cpy_e);
+	}
+	else
 	{
 	}
 }
@@ -351,21 +438,35 @@ assemble_instruction(
 {
 	assembled_instruction_t asm_inst = (assembled_instruction_t)calloc(1, sizeof(assembled_instruction));
 	word_t inst_length = NULL;
+	ushort i;
 	char *instruction_line_cpy = strdup(instruction_line);
 	char *instruction_line_cpy_e;
 	char *token, *operands;
 
 	inst_length = get_instruction_length(instruction_line_cpy);
-	asm_inst->opcode = (word**)calloc(1, sizeof(word*));
+	asm_inst->special_instruction = false;
+
+	if (inst_length->data != get_instruction_length_no_changes(instruction_line_cpy)->data)
+	{
+		/* this is a special instruction */
+		asm_inst->special_instruction = true;
+	}
+
+	/* allocate the number of opcode pointers */
+	asm_inst->opcode = (word**)calloc(inst_length->data, sizeof(word*));
 
 	/* based on the length we allocate the amount of words we need for the opcodes */
-	*(asm_inst->opcode) = (word_t)calloc(inst_length->data, sizeof(word));
+	for (i = 0; i < inst_length->data; i++)
+	{
+		asm_inst->opcode[i] = (word_t)calloc(1, sizeof(word));
+	}
+
 	asm_inst->length.data = inst_length->data;
 
 	/* this is the part where we create the instruction's opcodes */
 	/* the first opcode (word) characterize the entire instruction.
 	 * also the first opcode's encoding is absolute */
-	asm_inst->opcode[0]->data = ENCODE_ABSOLUTE;
+	((word_t)asm_inst->opcode[0])->data = ENCODE_ABSOLUTE;
 
 	token = strtok_r(
 			instruction_line_cpy,
@@ -426,6 +527,11 @@ assemble_instruction(
 					&instruction_line_cpy_e);
 
 			asm_inst->opcode[0]->data |= INSTRUCTION_DST_OP(get_operand_type(token)->data);
+
+			assemble_operands(
+					operands,
+					asm_inst,
+					prog_obj);
 		}
 		break;
 	}

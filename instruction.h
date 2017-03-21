@@ -8,25 +8,31 @@
 #include "Assembler.h"
 #include "arch.h"
 
-#define AVAILABLE_INST_COUNT  (16)
+#define AVAILABLE_INST_COUNT      (16)
 
 /* encodings */
-#define ENCODE_ABSOLUTE       (0)
-#define ENCODE_EXTERNAL       (1)
-#define ENCODE_RELOCATABLE    (2)
+#define ENCODE_ABSOLUTE           (0)
+#define ENCODE_EXTERNAL           (1)
+#define ENCODE_RELOCATABLE        (2)
 
 /* Macros */
-#define INSTRUCTION_DST_OP(x) (x << 2)
-#define INSTRUCTION_SRC_OP(x) (x << 4)
-#define INSTRUCTION_OPCODE(x) (x << 6)
-#define INSTRUCTION_GROUP(x)  (x << 10)
-#define INSTRUCTION_UNUSED(x) (x << 12)
+#define INSTRUCTION_DST_OP(x)     (x << 2)
+#define INSTRUCTION_SRC_OP(x)     (x << 4)
+#define INSTRUCTION_OPCODE(x)     (x << 6)
+#define INSTRUCTION_GROUP(x)      (x << 10)
+#define INSTRUCTION_UNUSED(x)     (x << 12)
 
 /* Operand types */
-#define OPERAND_IMMEDIATE     (0)
-#define OPERAND_ADDRESS       (1)
-#define OPERAND_REG_INDEX     (2)
-#define OPERAND_REGISTER      (3)
+#define OPERAND_IMMEDIATE         (0)
+#define OPERAND_ADDRESS           (1)
+#define OPERAND_REG_INDEX         (2)
+#define OPERAND_REGISTER          (3)
+#define OPERAND_IGNORED           (0xff)
+
+/* Operand Macros */
+#define OPERAND_SET_IMMEDIATE(x)  (x << 2)
+#define OPERAND_SET_SRC_REG(x)    (x << 8)
+#define OPERAND_SET_DST_RET(x)    (x << 2)
 
 enum InstructionId
 {
