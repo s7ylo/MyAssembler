@@ -12,16 +12,22 @@
 
 #define CODE_SECTION_BASE (100)
 
+typedef struct _section
+{
+	word size;
+	/*implement*/
+} section, *section_t;
+
 typedef struct _program_image
 {
 	/* the size in words of the code length */
-	word code_image_length;
+	word code_section_size;
 
 	/* the size in words of the data length */
-	word data_image_length;
+	word data_section_size;
 
-	word code_image[1000];
-	word data_image[1000];
+	word code_section[1000];
+	word data_section[1000];
 } program_image, *program_image_t;
 
 typedef struct _program_object

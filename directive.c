@@ -64,7 +64,7 @@ static word_t handle_data_directive(
 
 		while (token)
 		{
-			prog_obj->prog_image.data_image[prog_obj->prog_image.data_image_length.data++].data = strtoul(token, NULL, 10);
+			prog_obj->prog_image.data_section[prog_obj->prog_image.data_section_size.data++].data = strtoul(token, NULL, 10);
 
 			/* increase data counter by one */
 			prog_obj->dc->data++;
@@ -84,11 +84,11 @@ static word_t handle_data_directive(
 
 		for (i = 0; i < string_length; i++)
 		{
-			prog_obj->prog_image.data_image[prog_obj->prog_image.data_image_length.data++].data = string_value[i];
+			prog_obj->prog_image.data_section[prog_obj->prog_image.data_section_size.data++].data = string_value[i];
 		}
 
 		/* set the null terminator */
-		prog_obj->prog_image.data_image[prog_obj->prog_image.data_image_length.data++].data = 0;
+		prog_obj->prog_image.data_section[prog_obj->prog_image.data_section_size.data++].data = 0;
 		prog_obj->dc->data += (string_length + 1);
 		data_size->data = (string_length + 1);
 	}

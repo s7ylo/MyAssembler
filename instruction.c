@@ -200,6 +200,7 @@ void
 assemble_single_operand_instruction(
 		const char *operand,
 		word_t operand_type,
+		bool is_src_op,
 		ushort i,
 		assembled_instruction_t asm_inst,
 		program_object_t prog_obj)
@@ -262,6 +263,8 @@ assemble_single_operand_instruction(
 				asm_inst->opcode[i]->data |= OPERAND_SET_IMMEDIATE(atoi(operand_cpy));
 			}
 
+			/* we need to go back two bytes in order to be able to proparly free this memory */
+			operand_cpy -= 2;
 			free(operand_cpy);
 		}
 		break;
@@ -273,7 +276,15 @@ assemble_single_operand_instruction(
 			/* encoding is absolute */
 			asm_inst->opcode[i]->data = ENCODE_ABSOLUTE;
 			temp.data = operand[1] - 0x30;
-			asm_inst->opcode[i]->data |= OPERAND_SET_DST_REG(temp.data);
+
+			if (is_src_op)
+			{
+				asm_inst->opcode[i]->data |= OPERAND_SET_SRC_REG(temp.data);
+			}
+			else
+			{
+				asm_inst->opcode[i]->data |= OPERAND_SET_DST_REG(temp.data);
+			}
 		}
 		break;
 
@@ -321,6 +332,7 @@ assemble_dual_operands_instruction(
 	assemble_single_operand_instruction(
 			token,
 			operand_type,
+			true,
 			i,
 			asm_inst,
 			prog_obj);
@@ -336,6 +348,7 @@ assemble_dual_operands_instruction(
 	assemble_single_operand_instruction(
 			token,
 			operand_type,
+			false,
 			++i,
 			asm_inst,
 			prog_obj);
@@ -381,6 +394,7 @@ assemble_operands(
 			assemble_single_operand_instruction(
 					operands_cpy,
 					operand_type,
+					false,
 					i,
 					asm_inst,
 					prog_obj);
@@ -595,5 +609,6 @@ assemble_instruction(
 
 	free(operands);
 	free(instruction_line_cpy);
-	return NULL;
+
+	return asm_inst;
 }

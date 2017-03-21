@@ -76,6 +76,24 @@ void handle_symbol(
 	insert_symbol_to_table(&prog_obj->sym_tbl, sym);
 }
 
+static
+void
+insert_assembled_instruction(
+		assembled_instruction_t asm_inst,
+		program_object_t prog_obj,
+		word_t offs)
+{
+	ushort i;
+
+	for (i = 0; i < asm_inst->length.data; i++)
+	{
+		prog_obj->prog_image.code_section[offs->data++].data = asm_inst->opcode[i]->data;
+		prog_obj->prog_image.code_section_size.data ++;
+	}
+
+	offs->data += asm_inst->length.data;
+}
+
 /* at the first transition we pass the code and addressing only the following
  *  - keeping a counter of the data and code sections, the code count starts from 100 and the data from 0
  *  - as each instruction passes, we increment the code section counter by the size of the instruction
@@ -246,6 +264,7 @@ assembler_second_transition_single_line(
 	char *source_line_token;
 	char *directive = NULL;
 	assembled_instruction_t asm_inst = NULL;
+	word next_instruction_offs = {0};
 
 	/* split the line by spaces */
 	source_line_token = strtok_r(
@@ -258,6 +277,12 @@ assembler_second_transition_single_line(
 		asm_inst = assemble_instruction(
 				source_line,
 				prog_obj);
+
+		/* add this assembled instruction into the code section */
+		insert_assembled_instruction(
+				asm_inst,
+				prog_obj,
+				&next_instruction_offs);
 	}
 	else if ((directive = is_directive(source_line_token)))
 	{
@@ -278,6 +303,12 @@ assembler_second_transition_single_line(
 			asm_inst = assemble_instruction(
 					strchr(source_line, ':') + 1,
 					prog_obj);
+
+			/* add this assembled instruction into the code section */
+			insert_assembled_instruction(
+					asm_inst,
+					prog_obj,
+					&next_instruction_offs);
 		}
 	}
 	else
