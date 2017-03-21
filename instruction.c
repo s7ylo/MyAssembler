@@ -302,6 +302,43 @@ assemble_dual_operands_instruction(
 		assembled_instruction_t asm_inst,
 		program_object_t prog_obj)
 {
+	word_t operand_type = NULL;
+	char *operands_cpy = strdup(operands);
+	char *operands_cpy_e;
+	char *token;
+
+	/* extract the source operand */
+	token = strtok_r(
+			operands_cpy,
+			" \t,",
+			&operands_cpy_e);
+
+	operand_type = get_operand_type(token);
+
+	/* need to fix this! the assemble_single_operand_instruction function handles only dest operand
+	 * if we pass a source reg, it will set it as dest!!!@#$!@#!@#!@#$ FIX FIX FIX!@@#!@#
+	 */
+	assemble_single_operand_instruction(
+			token,
+			operand_type,
+			i,
+			asm_inst,
+			prog_obj);
+
+	/* extract the dest operand */
+	token = strtok_r(
+			NULL,
+			" \t,",
+			&operands_cpy_e);
+
+	operand_type = get_operand_type(token);
+
+	assemble_single_operand_instruction(
+			token,
+			operand_type,
+			++i,
+			asm_inst,
+			prog_obj);
 }
 
 static
@@ -314,8 +351,6 @@ assemble_operands(
 	word_t operand_type = NULL;
 	ushort i = 1;
 	char *operands_cpy = strdup(operands);
-	char *operands_cpy_e;
-	char *token;
 
 	/* we have 3 different situations here
 	 *  - a single operand (dest operand only)
@@ -333,6 +368,11 @@ assemble_operands(
 	{
 		if (asm_inst->length.data == 3)
 		{
+			assemble_dual_operands_instruction(
+					operands_cpy,
+					i,
+					asm_inst,
+					prog_obj);
 		}
 		else
 		{
@@ -346,6 +386,8 @@ assemble_operands(
 					prog_obj);
 		}
 	}
+
+	free(operands_cpy);
 }
 
 static
