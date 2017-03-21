@@ -27,12 +27,12 @@
 #define OPERAND_ADDRESS           (1)
 #define OPERAND_REG_INDEX         (2)
 #define OPERAND_REGISTER          (3)
-#define OPERAND_IGNORED           (0xff)
 
 /* Operand Macros */
 #define OPERAND_SET_IMMEDIATE(x)  (x << 2)
 #define OPERAND_SET_SRC_REG(x)    (x << 8)
-#define OPERAND_SET_DST_RET(x)    (x << 2)
+#define OPERAND_SET_DST_REG(x)    (x << 2)
+#define OPERAND_SET_SYM_ADDR(x)	   (x << 2)
 
 enum InstructionId
 {
