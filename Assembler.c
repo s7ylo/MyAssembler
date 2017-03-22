@@ -205,6 +205,7 @@ assembler_first_transition_single_line(
 					if (sym)
 					{
 						sym->flags.data |= SYMBOL_TYPE_INST;
+						sym->address.data = addr.data;
 					}
 					else
 					{
@@ -306,13 +307,6 @@ assembler_second_transition_single_line(
 					prog_obj,
 					next_ip);
 		}
-	}
-	else
-	{
-		print_log(
-			"%s Unfamiliar syntax at line: %d\n",
-			ERROR,
-			line_number);
 	}
 
 	if (asm_inst)
