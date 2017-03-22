@@ -22,7 +22,8 @@ static program_object_t initialize_program_object(void)
 	return prog_obj;
 }
 
-void handle_symbol(
+void
+handle_symbol(
 		program_object_t prog_obj,
 		const char *name,
 		word_t flags,
@@ -416,6 +417,8 @@ assembler_second_transition(
 				"\n",
 				&source_cpy_e);
 	}
+
+	/* now creating the .ext and .ent objects */
 
 	free(source_cpy);
 	return false;

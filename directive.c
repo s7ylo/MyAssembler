@@ -168,6 +168,7 @@ word_t handle_directive(
 			}
 		}
 	}
+
 	free(directive_line_cpy);
 	return NULL;
 }
