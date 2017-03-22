@@ -148,7 +148,7 @@ word_t handle_directive(
 
 			/* check if symbol exist before adding it into the symbol table */
 			sym = lookup_symbol_by_name(
-					prog_obj->sym_tbl,
+					prog_obj->symtab_entry,
 					token);
 
 			if (sym)
@@ -168,13 +168,6 @@ word_t handle_directive(
 			}
 		}
 	}
-	else /* second transition */
-	{
-		free(directive_line_cpy);
-		return NULL;
-	}
-
-	/* TODO: This */
 	free(directive_line_cpy);
 	return NULL;
 }

@@ -12,7 +12,8 @@ static program_object_t initialize_program_object(void)
 	if (!prog_obj)
 		return NULL;
 
-	prog_obj->sym_tbl = NULL;
+	prog_obj->extsymtab_entry = NULL;
+	prog_obj->symtab_entry = NULL;
 	prog_obj->ic = (word_t)calloc(1, sizeof(word));
 	prog_obj->dc = (word_t)calloc(1, sizeof(word));
 	prog_obj->code_size = (word_t)calloc(1, sizeof(word));
@@ -40,7 +41,7 @@ void handle_symbol(
 		return;
 	}
 
-	if (is_symbol_exist_in_table(prog_obj->sym_tbl, name))
+	if (is_symbol_exist_in_table(prog_obj->symtab_entry, name))
 	{
 		print_log(
 			"%s Symbol name: %s is already exist\n",
@@ -73,7 +74,7 @@ void handle_symbol(
 	else
 		sym->address.data = 0;
 
-	insert_symbol_to_table(&prog_obj->sym_tbl, sym);
+	insert_symbol_to_table(&prog_obj->symtab_entry, sym);
 }
 
 static
@@ -90,8 +91,6 @@ insert_assembled_instruction(
 		prog_obj->prog_image.code_section[offs->data++].data = asm_inst->opcode[i]->data;
 		prog_obj->prog_image.code_section_size.data ++;
 	}
-
-	offs->data += asm_inst->length.data;
 }
 
 /* at the first transition we pass the code and addressing only the following
@@ -175,7 +174,7 @@ assembler_first_transition_single_line(
 			/* need to remove spaces and tabs from the name in order to get the exact name */
 			name_cpy = strdup(symbol_name);
 			sym = lookup_symbol_by_name(
-					prog_obj->sym_tbl,
+					prog_obj->symtab_entry,
 					strtok(name_cpy, " \t"));
 
 			if (!strcasecmp(source_line_token, DIRECTIVE_DATA) ||
@@ -257,14 +256,13 @@ void
 assembler_second_transition_single_line(
 		const char *source_line,
 		program_object_t prog_obj,
+		word_t next_ip,
 		ushort line_number)
 {
 	char *source_line_cpy = strdup(source_line);
 	char *source_line_e;
 	char *source_line_token;
-	char *directive = NULL;
 	assembled_instruction_t asm_inst = NULL;
-	word next_instruction_offs = {0};
 
 	/* split the line by spaces */
 	source_line_token = strtok_r(
@@ -282,10 +280,7 @@ assembler_second_transition_single_line(
 		insert_assembled_instruction(
 				asm_inst,
 				prog_obj,
-				&next_instruction_offs);
-	}
-	else if ((directive = is_directive(source_line_token)))
-	{
+				next_ip);
 	}
 	else if (strchr(source_line_token, ':')) /* is symbol */
 	{
@@ -308,7 +303,7 @@ assembler_second_transition_single_line(
 			insert_assembled_instruction(
 					asm_inst,
 					prog_obj,
-					&next_instruction_offs);
+					next_ip);
 		}
 	}
 	else
@@ -317,6 +312,11 @@ assembler_second_transition_single_line(
 			"%s Unfamiliar syntax at line: %d\n",
 			ERROR,
 			line_number);
+	}
+
+	if (asm_inst)
+	{
+		prog_obj->ic->data += asm_inst->length.data;
 	}
 }
 
@@ -358,7 +358,7 @@ assembler_first_transition(
 	 * we need to update the addresses of the data symbols
 	 */
 	data_symbol_addr.data = prog_obj->ic->data;
-	entry = prog_obj->sym_tbl;
+	entry = prog_obj->symtab_entry;
 
 	while (entry)
 	{
@@ -378,6 +378,9 @@ assembler_first_transition(
 	prog_obj->code_size->data = (prog_obj->ic->data - CODE_SECTION_BASE);
 	prog_obj->data_size->data = prog_obj->dc->data;
 
+	/* initialize ic for later use */
+	prog_obj->ic->data = 0;
+
 	/* don't forget to free the copy of source code we made */
 	free(source_cpy);
 	return prog_obj;
@@ -389,6 +392,7 @@ assembler_second_transition(
 		program_object_t prog_obj)
 {
 	ushort line_number = 1;
+	word next_ip = {0};
 	char *source_cpy = strdup(source);
 	char *source_cpy_e;
 	char *source_line;
@@ -403,6 +407,7 @@ assembler_second_transition(
 		assembler_second_transition_single_line(
 				source_line,
 				prog_obj,
+				&next_ip,
 				line_number++);
 
 		/* moving to the next source line */

@@ -40,6 +40,26 @@ static reg_info available_registers[MaxReg] =
 };
 
 static
+void
+handle_external_symbol(
+		const char *name,
+		word_t addr,
+		program_object_t prog_obj)
+{
+	symbol_t sym = sym_alloc();
+
+	if (strlen(name) <= MAX_SYMBOL_NAME_LENGTH)
+	{
+		strcpy(sym->name, name);
+		sym->address.data = addr->data + CODE_SECTION_BASE;
+
+		insert_symbol_to_table(
+				&prog_obj->extsymtab_entry,
+				sym);
+	}
+}
+
+static
 bool
 is_operand_reg(
 		const char *operand)
@@ -205,17 +225,19 @@ assemble_single_operand_instruction(
 		assembled_instruction_t asm_inst,
 		program_object_t prog_obj)
 {
-	symbol_t sym = NULL;
 
 	switch (operand_type->data)
 	{
 	case OPERAND_ADDRESS:
 		{
+			symbol_t sym = NULL;
+			word external_addr = {0};
+
 			/* this operand encoding is relocatable
 			 * unless it is an external symbol
 			 */
 			sym = lookup_symbol_by_name(
-					prog_obj->sym_tbl,
+					prog_obj->symtab_entry,
 					operand);
 
 			if (sym)
@@ -223,13 +245,20 @@ assemble_single_operand_instruction(
 				if (sym->flags.data & SYMBOL_TYPE_EXTERN)
 				{
 					asm_inst->opcode[i]->data = ENCODE_EXTERNAL;
+					asm_inst->opcode[i]->data |= OPERAND_SET_SYM_ADDR(0);
+
+					external_addr.data = (prog_obj->ic->data + i);
+
+					handle_external_symbol(
+							sym->name,
+							&external_addr,
+							prog_obj);
 				}
 				else
 				{
 					asm_inst->opcode[i]->data = ENCODE_RELOCATABLE;
+					asm_inst->opcode[i]->data |= OPERAND_SET_SYM_ADDR(sym->address.data);
 				}
-
-				asm_inst->opcode[i]->data |= OPERAND_SET_SYM_ADDR(sym->address.data);
 			}
 		}
 		break;

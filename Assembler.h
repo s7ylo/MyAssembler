@@ -35,8 +35,10 @@ typedef struct _program_object
 	/* the program's image */
 	program_image prog_image;
 
+	/* external symbol table */
+	symbol_table_entry_t extsymtab_entry;
 	/* the symbol table */
-	symbol_table_entry_t sym_tbl;
+	symbol_table_entry_t symtab_entry;
 
 	/* instruction and data counters */
 	word_t ic;
