@@ -138,7 +138,10 @@ word_t handle_directive(
 					NULL, /* data size */
 					0);
 		}
-		else /* in case of .entry */
+	}
+	else /* second transition, handling only in .entry */
+	{
+		if (!strcasecmp(token, DIRECTIVE_ENTRY))
 		{
 			/* extract the symbol name */
 			token = strtok_r(
