@@ -190,6 +190,7 @@ assembler_first_transition_single_line(
 				if (sym)
 				{
 					sym->flags.data |= SYMBOL_TYPE_DATA;
+					sym->address.data = addr.data;
 				}
 				else
 				{

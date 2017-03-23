@@ -27,6 +27,7 @@ create_extern_file(
 
 void
 create_program_file(
+		const char *file_name,
 		program_object_t prog_obj);
 
 /*
@@ -105,6 +106,10 @@ main(
 
 	create_extern_file(
 			ext_file_name,
+			prog_obj);
+
+	create_program_file(
+			obj_file_name,
 			prog_obj);
 
 	if (success)
@@ -278,4 +283,92 @@ create_extern_file(
 		ext_file);
 
 	fclose(ext_file);
+}
+
+
+void
+create_program_file(
+		const char *file_name,
+		program_object_t prog_obj)
+{
+	void *buffer = calloc(1000, sizeof(word)); /* assuming a size of 1000 words will be enough for an entry file */
+	FILE *obj_file = NULL;
+	word buffer_offs = {0};
+	word file_total_size = {0};
+	ushort i, addr = CODE_SECTION_BASE;
+
+	/* Program file has the following format
+	 * first word is the size of code section in words
+	 * second word is the size of the data section in words
+	 * after that is the actuall instructions and data in the format of
+	 * <addr> <opcode/data_value>
+	 */
+	memcpy(
+		(void*)(buffer + buffer_offs.data),
+		prog_obj->ic,
+		sizeof(word));
+
+	buffer_offs.data += sizeof(word);
+
+	memcpy(
+		(void*)(buffer + buffer_offs.data),
+		prog_obj->dc,
+		sizeof(word));
+
+	buffer_offs.data += sizeof(word);
+
+	for (i = 0;	i < prog_obj->ic->data; i++)
+	{
+		memcpy(
+			(void*)(buffer + buffer_offs.data),
+			&addr,
+			sizeof(word));
+
+		addr++;
+		buffer_offs.data += sizeof(word);
+
+		memcpy(
+			(void*)(buffer + buffer_offs.data),
+			&prog_obj->prog_image.code_section[i],
+			sizeof(word));
+
+		buffer_offs.data += sizeof(word);
+	}
+
+	for (i = 0; i < prog_obj->dc->data; i++)
+	{
+		memcpy(
+			(void*)(buffer + buffer_offs.data),
+			&addr,
+			sizeof(word));
+
+		addr++;
+		buffer_offs.data += sizeof(word);
+
+		memcpy(
+			(void*)(buffer + buffer_offs.data),
+			&prog_obj->prog_image.data_section[i],
+			sizeof(word));
+
+		buffer_offs.data += sizeof(word);
+	}
+
+	obj_file = fopen(
+			file_name,
+			"wb");
+
+	if (!obj_file)
+	{
+		// TODO: Error opening file
+	}
+
+	file_total_size.data = (2 + ((prog_obj->ic->data + prog_obj->dc->data)*2));
+
+	fwrite(
+		buffer,
+		sizeof(word),
+		file_total_size.data, /* program total size include both words on start in words*/
+		obj_file);
+
+	fclose(obj_file);
 }
