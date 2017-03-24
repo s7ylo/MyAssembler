@@ -21,7 +21,8 @@ typedef struct _program_object *program_object_t;
 
 char* is_directive(const char *field);
 
-word_t handle_directive(
+word_t
+handle_directive(
 		const char *directive_line,
 		program_object_t prog_obj,
 		bool is_first_transition);

@@ -96,7 +96,8 @@ static word_t handle_data_directive(
 	return data_size;
 }
 
-word_t handle_directive(
+word_t
+handle_directive(
 		const char *directive_line,
 		program_object_t prog_obj,
 		bool is_first_transition)

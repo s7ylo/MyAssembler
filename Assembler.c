@@ -265,6 +265,7 @@ assembler_second_transition_single_line(
 	char *source_line_cpy = strdup(source_line);
 	char *source_line_e;
 	char *source_line_token;
+	char *directive = NULL;
 	assembled_instruction_t asm_inst = NULL;
 
 	/* split the line by spaces */
@@ -285,6 +286,13 @@ assembler_second_transition_single_line(
 				prog_obj,
 				next_ip);
 	}
+	else if ((directive = is_directive(source_line_token)))
+	{
+		handle_directive(
+				source_line,
+				prog_obj,
+				false);
+	}
 	else if (strchr(source_line_token, ':')) /* is symbol */
 	{
 		/* extract the next token */
@@ -295,6 +303,10 @@ assembler_second_transition_single_line(
 
 		if (is_directive(source_line_token))
 		{
+			handle_directive(
+					source_line,
+					prog_obj,
+					false);
 		}
 		else /* instruction */
 		{
