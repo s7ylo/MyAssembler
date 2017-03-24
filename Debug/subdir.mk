@@ -9,7 +9,7 @@ C_SRCS += \
 ../instruction.c \
 ../logs.c \
 ../main.c \
-../symbols.c 
+../symbol.c 
 
 OBJS += \
 ./Assembler.o \
@@ -17,7 +17,7 @@ OBJS += \
 ./instruction.o \
 ./logs.o \
 ./main.o \
-./symbols.o 
+./symbol.o 
 
 C_DEPS += \
 ./Assembler.d \
@@ -25,14 +25,14 @@ C_DEPS += \
 ./instruction.d \
 ./logs.d \
 ./main.d \
-./symbols.d 
+./symbol.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
 %.o: ../%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C Compiler'
-	gcc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	gcc -O0 -g3 -pedantic -Wall -c -fmessage-length=0 -ansi -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

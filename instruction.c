@@ -3,8 +3,7 @@
  */
 
 #include "instruction.h"
-#include "symbols.h"
-#include "Assembler.h"
+#include "symbol.h"
 
 /* all available instructions */
 static instruction_info available_instructions[AVAILABLE_INST_COUNT] =
@@ -50,7 +49,7 @@ handle_external_symbol(
 
 	if (strlen(name) <= MAX_SYMBOL_NAME_LENGTH)
 	{
-		strcpy(sym->name, name);
+		strncpy(sym->name, name, strlen(name));
 		sym->address.data = addr->data + CODE_SECTION_BASE;
 
 		insert_symbol_to_table(

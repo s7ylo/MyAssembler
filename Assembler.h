@@ -6,7 +6,7 @@
 #define ASSEMBLER_H_
 
 #include "arch.h"
-#include "symbols.h"
+#include "symbol.h"
 #include "directive.h"
 #include "instruction.h"
 

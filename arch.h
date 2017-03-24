@@ -7,9 +7,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <strings.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include "prototype.h"
 
 #define WORD_SIZE  (15)
 #define REGS_COUNT (8)
@@ -18,6 +19,10 @@ typedef unsigned short ushort;
 
 typedef struct _word
 {
+	/* Compiling with -pedantic causes this warning to pop
+	 * and there is nothing we can do about it
+	 * so forgive me for this warning
+	 */
 	short data:WORD_SIZE;
 } word, *word_t;
 

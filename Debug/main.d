@@ -1,11 +1,13 @@
-main.d: ../main.c ../Assembler.h ../arch.h ../symbols.h ../directive.h \
- ../instruction.h
+main.d: ../main.c ../Assembler.h ../arch.h ../prototype.h ../symbol.h \
+ ../directive.h ../instruction.h
 
 ../Assembler.h:
 
 ../arch.h:
 
-../symbols.h:
+../prototype.h:
+
+../symbol.h:
 
 ../directive.h:
 

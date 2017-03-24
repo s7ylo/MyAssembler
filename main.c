@@ -172,7 +172,7 @@ create_entry_file(
 
 	if (!buffer)
 	{
-		// TODO: Unable to allocate memory for entry file buffer
+		printf("[-] Failed to allocate buffer, probably out of memory\n");
 		return;
 	}
 
@@ -182,7 +182,7 @@ create_entry_file(
 
 	if (!ent_file)
 	{
-		// TODO: Unable to open file for writing
+		printf("[-] Unable to open file: %s for writing\n", file_name);
 		return;
 	}
 
@@ -191,7 +191,7 @@ create_entry_file(
 		if (entry->sym->flags.data & SYMBOL_TYPE_ENTRY)
 		{
 			memcpy(
-				(void*)(buffer + buffer_offs.data),
+				(void*)((size_t)buffer + buffer_offs.data),
 				entry->sym->name,
 				strlen(entry->sym->name));
 
@@ -205,7 +205,7 @@ create_entry_file(
 			}
 
 			memcpy(
-				(void*)(buffer + buffer_offs.data),
+				(void*)((size_t)buffer + buffer_offs.data),
 				&entry->sym->address,
 				sizeof(word));
 
@@ -236,7 +236,7 @@ create_extern_file(
 
 	if (!buffer)
 	{
-		// TODO: Unable to allocate memory for entry file buffer
+		printf("[-] Failed to allocate buffer, probably out of memory\n");
 		return;
 	}
 
@@ -246,14 +246,14 @@ create_extern_file(
 
 	if (!ext_file)
 	{
-		// TODO: Unable to open file for writing
+		printf("[-] Unable to open file: %s for writing\n", file_name);
 		return;
 	}
 
 	while (entry)
 	{
 		memcpy(
-			(void*)(buffer + buffer_offs.data),
+			(void*)((size_t)buffer + buffer_offs.data),
 			entry->sym->name,
 			strlen(entry->sym->name));
 
@@ -267,7 +267,7 @@ create_extern_file(
 		}
 
 		memcpy(
-			(void*)(buffer + buffer_offs.data),
+			(void*)((size_t)buffer + buffer_offs.data),
 			&entry->sym->address,
 			sizeof(word));
 
@@ -304,14 +304,14 @@ create_program_file(
 	 * <addr> <opcode/data_value>
 	 */
 	memcpy(
-		(void*)(buffer + buffer_offs.data),
+		(void*)((size_t)buffer + buffer_offs.data),
 		prog_obj->ic,
 		sizeof(word));
 
 	buffer_offs.data += sizeof(word);
 
 	memcpy(
-		(void*)(buffer + buffer_offs.data),
+		(void*)((size_t)buffer + buffer_offs.data),
 		prog_obj->dc,
 		sizeof(word));
 
@@ -320,7 +320,7 @@ create_program_file(
 	for (i = 0;	i < prog_obj->ic->data; i++)
 	{
 		memcpy(
-			(void*)(buffer + buffer_offs.data),
+			(void*)((size_t)buffer + buffer_offs.data),
 			&addr,
 			sizeof(word));
 
@@ -328,7 +328,7 @@ create_program_file(
 		buffer_offs.data += sizeof(word);
 
 		memcpy(
-			(void*)(buffer + buffer_offs.data),
+			(void*)((size_t)buffer + buffer_offs.data),
 			&prog_obj->prog_image.code_section[i],
 			sizeof(word));
 
@@ -338,7 +338,7 @@ create_program_file(
 	for (i = 0; i < prog_obj->dc->data; i++)
 	{
 		memcpy(
-			(void*)(buffer + buffer_offs.data),
+			(void*)((size_t)buffer + buffer_offs.data),
 			&addr,
 			sizeof(word));
 
@@ -346,7 +346,7 @@ create_program_file(
 		buffer_offs.data += sizeof(word);
 
 		memcpy(
-			(void*)(buffer + buffer_offs.data),
+			(void*)((size_t)buffer + buffer_offs.data),
 			&prog_obj->prog_image.data_section[i],
 			sizeof(word));
 
@@ -359,7 +359,7 @@ create_program_file(
 
 	if (!obj_file)
 	{
-		// TODO: Error opening file
+		printf("[-] Unable to open file: %s for writing\n", file_name);
 	}
 
 	file_total_size.data = (2 + ((prog_obj->ic->data + prog_obj->dc->data)*2));

@@ -3,6 +3,7 @@
  */
 
 #include "directive.h"
+#include "Assembler.h"
 
 /* all available guidance statements */
 static char *available_directives[AVAILABLE_DIRECTIVE_COUNT] =
@@ -20,7 +21,10 @@ char* is_directive(const char *field)
 	char *token;
 	int i;
 
-	token = strtok_r(field_cpy, " \t", &field_cpy_e);
+	token = (char*)strtok_r(
+			field_cpy,
+			" \t",
+			&field_cpy_e);
 
 	for (i = 0; i < AVAILABLE_DIRECTIVE_COUNT; i++)
 	{
@@ -45,7 +49,7 @@ static word_t handle_data_directive(
 	char *directive_line_e;
 	char *token;
 	char *string_value = NULL;
-	ushort string_length; /* TODO: Consider using word */
+	ushort string_length;
 	ushort i;
 	word_t data_size = (word_t)calloc(1, sizeof(word));
 

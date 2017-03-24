@@ -6,7 +6,6 @@
 #define DIRECTIVE_H_
 
 #include "arch.h"
-#include "Assembler.h"
 
 #define AVAILABLE_DIRECTIVE_COUNT (4)
 

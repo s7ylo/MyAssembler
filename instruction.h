@@ -6,7 +6,6 @@
 #define INSTRUCTION_H_
 
 #include "Assembler.h"
-#include "arch.h"
 
 #define AVAILABLE_INST_COUNT      (16)
 

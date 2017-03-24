@@ -22,62 +22,6 @@ static program_object_t initialize_program_object(void)
 	return prog_obj;
 }
 
-void
-handle_symbol(
-		program_object_t prog_obj,
-		const char *name,
-		word_t flags,
-		word_t data_size,
-		word_t address)
-{
-	symbol_t sym;
-
-	if (strlen(name) > MAX_SYMBOL_NAME_LENGTH)
-	{
-		print_log(
-			"%s Symbol name: %s exceeds the allowed max length\n",
-			ERROR,
-			name);
-
-		return;
-	}
-
-	if (is_symbol_exist_in_table(prog_obj->symtab_entry, name))
-	{
-		print_log(
-			"%s Symbol name: %s is already exist\n",
-			ERROR,
-			name);
-
-		return;
-	}
-
-	sym = sym_alloc();
-
-	strncpy(
-		sym->name,
-		name,
-		strlen(name));
-
-	/* Flags update */
-	sym->flags.data = flags->data;
-
-	if (sym->flags.data & SYMBOL_TYPE_DATA)
-	{
-		if (data_size)
-		{
-			sym->data_size.data = data_size->data;
-		}
-	}
-
-	if (address)
-		sym->address.data = address->data;
-	else
-		sym->address.data = 0;
-
-	insert_symbol_to_table(&prog_obj->symtab_entry, sym);
-}
-
 static
 void
 insert_assembled_instruction(
@@ -326,6 +270,62 @@ assembler_second_transition_single_line(
 	{
 		prog_obj->ic->data += asm_inst->length.data;
 	}
+}
+
+void
+handle_symbol(
+		program_object_t prog_obj,
+		const char *name,
+		word_t flags,
+		word_t data_size,
+		word_t address)
+{
+	symbol_t sym;
+
+	if (strlen(name) > MAX_SYMBOL_NAME_LENGTH)
+	{
+		print_log(
+			"%s Symbol name: %s exceeds the allowed max length\n",
+			ERROR,
+			name);
+
+		return;
+	}
+
+	if (is_symbol_exist_in_table(prog_obj->symtab_entry, name))
+	{
+		print_log(
+			"%s Symbol name: %s is already exist\n",
+			ERROR,
+			name);
+
+		return;
+	}
+
+	sym = sym_alloc();
+
+	strncpy(
+		sym->name,
+		name,
+		strlen(name));
+
+	/* Flags update */
+	sym->flags.data = flags->data;
+
+	if (sym->flags.data & SYMBOL_TYPE_DATA)
+	{
+		if (data_size)
+		{
+			sym->data_size.data = data_size->data;
+		}
+	}
+
+	if (address)
+		sym->address.data = address->data;
+	else
+		sym->address.data = 0;
+
+	insert_symbol_to_table(&prog_obj->symtab_entry, sym);
 }
 
 program_object_t
