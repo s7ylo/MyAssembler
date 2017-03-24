@@ -3,7 +3,7 @@
  */
 
 #include "directive.h"
-#include "Assembler.h"
+#include "symbol.h"
 
 /* all available guidance statements */
 static char *available_directives[AVAILABLE_DIRECTIVE_COUNT] =

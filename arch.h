@@ -23,7 +23,7 @@ typedef struct _word
 	 * and there is nothing we can do about it
 	 * so forgive me for this warning
 	 */
-	short data:WORD_SIZE;
+	ushort data:WORD_SIZE;
 } word, *word_t;
 
 /* the cpu architecture */

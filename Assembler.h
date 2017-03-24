@@ -7,8 +7,6 @@
 
 #include "arch.h"
 #include "symbol.h"
-#include "directive.h"
-#include "instruction.h"
 
 #define CODE_SECTION_BASE (100)
 

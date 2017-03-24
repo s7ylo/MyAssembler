@@ -4,6 +4,8 @@
 
 #include "Assembler.h"
 #include "logs.h"
+#include "directive.h"
+#include "instruction.h"
 
 static program_object_t initialize_program_object(void)
 {

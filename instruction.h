@@ -53,9 +53,6 @@ enum InstructionId
 	Stop
 };
 
-/* Fix external types */
-typedef struct _program_object *program_object_t;
-
 typedef struct _instruction_info
 {
 	word opcode;
