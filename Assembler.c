@@ -427,8 +427,6 @@ assembler_second_transition(
 				&source_cpy_e);
 	}
 
-	/* now creating the .ext and .ent objects */
-
 	free(source_cpy);
 	return false;
 }

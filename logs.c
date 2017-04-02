@@ -7,8 +7,7 @@
 void
 print_log(
 		const char *format,
-		...
-		)
+		...)
 {
 	va_list args;
 

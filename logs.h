@@ -13,7 +13,6 @@
 void
 print_log(
 		const char *format,
-		...
-		);
+		...);
 
 #endif /* LOGS_H_ */
